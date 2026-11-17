@@ -1,0 +1,742 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laser Heist</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a vault console. Header with stars + laser colour, mode tabs, then the board with a control strip and a live "what the light did" readout. Committed dark look: lasers need the dark. */
+:root{
+  --bg:#0a0f1e; --panel:#121a31; --panel2:#18213d; --line:#27325a; --fg:#eaf0ff; --muted:#97a3cb;
+  --laser:#ff3b5c; --crystal:#7ef3ff; --mirror:#d4defc; --wall:#ff7a45; --ok:#57e39a; --warn:#ffc04d; --bad:#ff6b6b;
+  --glass:rgba(140,205,255,.16); --glassline:#8fcbff; --water:rgba(60,140,255,.26);
+  --f-display:"Chakra Petch",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --board:#070b17; --gridline:#141c36;
+  color-scheme:dark;
+}
+:root[data-scheme="galaxy"]{--bg:#120a24;--panel:#1d1236;--panel2:#251843;--line:#3a2a63;--fg:#f1ebff;--muted:#b3a5d6;--crystal:#c79bff;--board:#0d0720;--gridline:#1f1440}
+:root[data-scheme="ocean"]{--bg:#04161c;--panel:#0b232b;--panel2:#0f2d37;--line:#1d4653;--fg:#e6fbff;--muted:#8fb8c3;--crystal:#5ef0d0;--board:#031015;--gridline:#0c2a33}
+:root[data-scheme="forest"]{--bg:#0b140d;--panel:#132116;--panel2:#182a1c;--line:#2b4630;--fg:#ecf8ee;--muted:#9db8a2;--crystal:#9dff6b;--board:#07100a;--gridline:#12241a}
+:root[data-scheme="day"]{--bg:#eef2f8;--panel:#ffffff;--panel2:#f3f6fb;--line:#d3dbea;--fg:#141b2d;--muted:#56627d;--crystal:#0a86a8;--warn:#b86e00;--ok:#14935a;--bad:#d23a3a;--board:#0b1222;--gridline:#18223d;color-scheme:light}
+:root[data-scheme="day"] .board svg,:root[data-scheme="day"] .qsvg svg{--warn:#ffc04d;--ok:#57e39a;--crystal:#7ef3ff}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--crystal);outline-offset:2px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:10px}
+h1{font-family:var(--f-display);font-size:clamp(30px,8vw,44px);line-height:1;margin:0;letter-spacing:.02em;text-transform:uppercase}
+h1 span{color:var(--laser);text-shadow:0 0 18px var(--laser)}
+.sub{margin:4px 0 0;color:var(--muted)}
+.starbox{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 12px}
+.starbox b{font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.star{color:var(--warn)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 16px;font-weight:700}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:12px;min-width:0}
+.worlds{display:grid;gap:8px}
+.world{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.world>span{font-family:var(--f-display);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);width:92px}
+.lv{min-width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-family:var(--f-mono);display:grid;place-items:center;line-height:1;padding:3px 4px;gap:1px}
+.lv small{font-size:9px;color:var(--warn);letter-spacing:-1px}
+.lv[aria-current="true"]{border:2px solid var(--crystal);box-shadow:0 0 12px rgba(126,243,255,.35)}
+.task h2{font-family:var(--f-display);font-size:21px;margin:0}
+.task p{margin:2px 0 0;color:var(--muted)}
+.boardwrap{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:14px;align-items:start}
+@media (max-width:720px){.boardwrap{grid-template-columns:1fr}}
+.board{background:var(--board);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative;max-width:560px;width:100%}
+.board svg{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.side{display:grid;gap:10px;min-width:0}
+.ctrl{display:grid;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.ctrl .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctrl .sel{font-weight:700}
+.ctrl .ang{font-family:var(--f-mono);font-size:20px;color:var(--crystal);min-width:64px;font-variant-numeric:tabular-nums}
+.rbtn{width:44px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:18px}
+.rbtn:active{background:var(--line)}
+.pick{display:flex;gap:6px;flex-wrap:wrap}
+.pick button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:4px 10px;font-size:13px}
+.pick button[aria-pressed="true"]{border-color:var(--crystal);color:var(--crystal)}
+.toggles{display:grid;gap:6px;font-size:14px}
+.toggles label{display:flex;gap:8px;align-items:center}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--crystal)}
+.meta{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.ghostbtn{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 12px;font-size:14px}
+.hintmsg{font-size:14px;color:var(--warn)}
+.log{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:4px}
+.log h3{margin:0 0 2px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.log ol{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.log b{font-family:var(--f-mono);font-weight:500;color:var(--crystal)}
+.log em{font-style:normal;color:var(--muted)}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,11,23,.72);backdrop-filter:blur(2px)}
+.winbox{text-align:center;display:grid;gap:8px;padding:16px}
+.winbox h3{margin:0;font-family:var(--f-display);font-size:30px;text-transform:uppercase;color:var(--ok);text-shadow:0 0 16px rgba(87,227,154,.6)}
+.bigstars{font-size:40px;letter-spacing:6px}
+.bigstars .off{color:#38406a}
+.go{background:var(--crystal);color:#04131a;border:0;border-radius:10px;padding:10px 18px;font-weight:700;font-size:16px}
+.unlock{color:var(--warn);font-weight:700}
+.lasers{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.lsw{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:11px;font-family:var(--f-mono);color:var(--muted)}
+.lsw[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.lsw:disabled{opacity:.35;cursor:not-allowed}
+.rainbow-ray{animation:hue 3s linear infinite}
+@keyframes hue{to{filter:hue-rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rainbow-ray{animation:none}}
+.rulecard{background:var(--panel2);border-left:3px solid var(--crystal);border-radius:8px;padding:8px 12px;font-size:14px}
+.rulecard b{color:var(--crystal)}
+.vault{background:linear-gradient(180deg,rgba(255,192,77,.12),rgba(255,192,77,.04));border:2px solid var(--warn);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
+.vault h3{margin:0;font-family:var(--f-display);font-size:18px;text-transform:uppercase;color:var(--warn);letter-spacing:.04em}
+.vault .vq{font-weight:700;font-size:17px;margin:0}
+.vault .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.numin{width:90px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-family:var(--f-mono);font-size:18px}
+.vchoices{display:grid;gap:6px}
+.vchoices button{text-align:left;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 12px}
+.vchoices button.wrong{border-color:var(--bad);opacity:.6}
+.vchoices button.right{border-color:var(--ok);background:rgba(87,227,154,.18)}
+.vfb{font-weight:700;min-height:22px}.vfb.ok{color:var(--ok)}.vfb.no{color:var(--bad)}
+.go.sm{padding:8px 14px;font-size:15px}
+.calcmsg{font-size:14px;min-height:0}
+.calcmsg.no{color:var(--bad)}.calcmsg.ok{color:var(--ok)}
+@keyframes pulse{0%{r:8;opacity:1}100%{r:26;opacity:0}}
+.pulse{animation:pulse 1.2s ease-out infinite}
+.brand{display:flex;align-items:center;gap:12px}
+.adlogo{height:58px;width:auto;flex:none;background:#fff;border-radius:12px;padding:5px 7px}
+.adlogo.sm{height:52px;justify-self:center}
+.adlogo.xs{height:40px;justify-self:center}
+.hright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.themes{display:flex;gap:5px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 8px}
+.th{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);padding:0}
+.th[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--fg)}
+/* quick fire */
+.qf{display:grid;gap:12px}
+.qfhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--f-mono)}
+.qfhead b{font-family:var(--f-display);font-size:22px;color:var(--fg)}
+.combo{color:var(--warn);font-weight:700}
+.qbar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.qbar i{display:block;height:100%;background:var(--crystal);width:100%}
+.qq{font-weight:700;font-size:18px;margin:0}
+.qsvg{background:var(--board);border:1px solid var(--line);border-radius:14px;max-width:560px;width:100%}
+.qsvg svg{display:block;width:100%;height:auto}
+.answers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:560px}
+.ans{border:2px solid var(--line);background:var(--panel2);border-radius:12px;padding:12px 6px;font-family:var(--f-display);font-size:22px;font-weight:700}
+.ans.a{border-color:#ff6b9a} .ans.b{border-color:#ffc04d} .ans.c{border-color:#57e39a}
+.ans.txt{font-family:var(--f-body);font-size:16px;padding:12px 10px;border-color:var(--line)}
+.answers.two{grid-template-columns:repeat(2,1fr)}
+.answers.stack{grid-template-columns:1fr}
+.answers.stack .ans{text-align:left}
+.ans:disabled{cursor:default}
+#nextrow{display:flex;justify-content:flex-end}
+.ans.right{background:rgba(87,227,154,.25)} .ans.wrong{background:rgba(255,107,107,.25);opacity:.8}
+.why{min-height:44px;font-size:15px}
+.qbarrow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-family:var(--f-mono)}
+.qbarrow .qbar{flex:1}
+.bestbox{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 14px}
+.bestbox span{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.bestbox b{font-family:var(--f-display);font-size:22px}
+.bestbox .bestrank{color:var(--warn);font-weight:700;letter-spacing:.03em}
+.qbest{font-size:13px;color:var(--muted);font-family:var(--f-mono);text-align:right}
+.rankname{font-family:var(--f-display);font-size:26px;font-weight:700;color:var(--warn);text-transform:uppercase;text-shadow:0 0 14px rgba(255,192,77,.45)}
+.ranks{border-collapse:collapse;font-size:14px;width:min(340px,100%)}
+.ranks td{padding:5px 10px;border-bottom:1px solid var(--line);text-align:left}
+.ranks td:last-child{text-align:right;font-family:var(--f-mono);color:var(--muted)}
+.ranks tr.me td{background:rgba(255,192,77,.14);color:var(--warn);font-weight:700}
+.why.ok{color:var(--ok)} .why.no{color:var(--bad)}
+.center{text-align:center;display:grid;gap:10px;justify-items:center;padding:18px 6px}
+.center h2{font-family:var(--f-display);font-size:28px;margin:0;text-transform:uppercase}
+.center .score{font-family:var(--f-display);font-size:48px;color:var(--crystal)}
+/* modal */
+.modal{position:fixed;inset:0;z-index:20;background:rgba(4,7,15,.7);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.mcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;width:min(520px,100%);max-height:100%;overflow:auto;display:grid;gap:12px}
+.mcard h2{font-family:var(--f-display);margin:0;font-size:26px;text-transform:uppercase}
+.mcard h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.mcard ul{margin:0;padding-left:20px;display:grid;gap:4px}
+.mcard p{margin:0}
+.rule{background:var(--panel2);border-radius:10px;padding:8px 12px;font-size:14px}
+.rule b{color:var(--crystal)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><img class="adlogo" src="data:image/png;base64,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" alt="Achievers Dream"><div><h1>Laser <span>Heist</span></h1><p class="sub">Bend and bounce the laser to light every crystal and crack the vault.</p></div></div>
+    <div class="hright"><div class="themes" id="themes" role="group" aria-label="Colour theme"></div>
+    <div class="starbox" title="Stars collected"><span class="star" aria-hidden="true">★</span><b id="totstars">0</b><span class="sub" style="margin:0">/ <span id="maxstars"></span></span></div></div>
+  </header>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-heist" aria-selected="true">Heist</button>
+    <button class="tab" role="tab" id="t-qf" aria-selected="false">Quick Fire</button>
+    <button class="tab" id="t-help">How to play</button>
+  </div>
+
+  <section id="heist" class="card">
+    <div class="worlds" id="worlds"></div>
+    <div class="task"><h2 id="ttl"></h2><p id="hint"></p></div>
+    <div class="rulecard" id="rulecard"></div>
+    <div class="vault" id="vault" hidden></div>
+    <div class="boardwrap">
+      <div class="board" id="board">
+        <svg id="svg" viewBox="0 0 360 360" aria-label="Puzzle board"></svg>
+        <div class="overlay" id="win" hidden></div>
+      </div>
+      <div class="side">
+        <div class="ctrl">
+          <div class="pick" id="pick" aria-label="Choose what to rotate"></div>
+          <div class="row" id="rotrow"><button class="rbtn" id="rl" aria-label="Rotate anticlockwise">↺</button><span class="ang" id="ang">0°</span><button class="rbtn" id="rr" aria-label="Rotate clockwise">↻</button></div>
+          <div class="row" id="calcrow" hidden><label for="calcin">Angle of incidence <b>i</b> =</label><input id="calcin" class="numin" inputmode="decimal" autocomplete="off"><span>°</span><button class="go sm" id="firebtn">Fire!</button></div>
+          <div class="calcmsg" id="calcmsg"></div>
+          <div class="meta"><span id="clock">0s</span><span id="par"></span></div>
+        </div>
+        <div class="toggles">
+          <label><input type="checkbox" id="shownorm" checked> Show normals &amp; angles</label>
+          <label id="ghostlab"><input type="checkbox" id="showghost"> Show path if light didn't bend</label>
+        </div>
+        <div class="row"><button class="ghostbtn" id="hintbtn">Hint (costs 1 ★)</button> <button class="ghostbtn" id="resetbtn">Reset</button></div>
+        <div class="hintmsg" id="hintmsg"></div>
+        <div class="log"><h3>What the light did</h3><ol id="log"></ol></div>
+        <div><h3 style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Laser colour</h3><div class="lasers" id="lasers"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="qfview" class="card" hidden></section>
+</div>
+
+<div class="modal" id="help" hidden>
+  <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="h-title">
+    <img class="adlogo sm" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIcAAAB1CAYAAABkvfIYAAAzuUlEQVR4nO1dZ1hURxc+t25jl6U36SCiWFABFQuKFRQLaux+sUts2I1iiYkaW4wtxpbYe4m9FyxRxIKCIhaK9A67bL3l+7HsursCaoyKhvd5eNg7c+7szL3vzpw5c+YMwH8ECIpirUeNmve56/ElAf/cFfhUCIuK2iowFZt/7np8SfhPkKNRWNjwRiGhAymZXAYAKAAwn7tOXwLQz12Bjw2+mZl150mRyzEUw3h8E2HLgYOnfO46fSn4qsmBYhj27caN0XyhSIwyAAgL0LJ3/0kYTnA+d92+BHzV5HBv1qyzjbObl5YYKANgamll51i3nv/nrtuXAORzV+BjAedy+VNPnHxlIhSbIywAWk4OYFmQ5hfm/dy/u7tKLpd87npWZ3y1PUfbkaMXaImBsABIOTEQBsDUzNyqWbfw0Z+7jtUdX2XPgXO5/Bknz2TxTIQilNEQAy0nhpYoCMPCwv7dXItzs1M+d32rK77KnqPLhMgVPMGbxED1iIGwACN//OXE565rdcZXSY46LVt11eoYFfUY2qGmlotHvUEzftiNIMhX2YN+KL46cjg1aNRSbGHtoCGAITFAjxgICwAsQJPWHb9p32foTAD0q3sWH4qv6oEgCIL0jZq/A0UQBGWMegwtIaB8eClPx1AMDRsasahll55jP2/tqx++KnLwxWJrCwdHF1SPDK8JomGGZjr7migIq+lN+kfMWNu577dRn6/21Q9fFTmsnJy9ND1Gea+h1THKiYEZ6B7wWq6cLN36j14weHzUn5+3FdUHXxU5HOv4+Fc1lOj3GABgoH8gLACKoEhg225Dp/248bpAaGr1WRpRjVCttXQERfEmXcOGBfbo+50JXyhOT3x878reHUtTE+P/rkh+xv7jaRY2do66KSvLArB6U1g9guiUVUA0PYvOUKbJz05LTlz+w9i2kuLC7E/b6uqDaksOBEXxqKvXyngYl8RoFlAaAKVYwGiALQum9X5488oh43uWXY1lESNiaNdUDIjB6JFGm24kAyxAUsK96JULI9oxDEN/6vZXB1TbYaVuu+BwkuSSFeUNmjL/T5Lk8vXTMILk6XQJXY+BVEgM5B2IgbAseHn7tu43ZPKvH7+11RPVlhzB48YtqiyPxxeY+AS0CtNPE5qZW2mHC2MiGAwlRnaOyoihvW4VFDbC3bN+4MdtbfVEtSUHTySq0qVPZGFpr39NcLgCfR3jjR6DZUEuLZMiYEgM0H4GeIMYwAKQJIczdsKiA8Y91X8B1ZYcyTG3z1eWxwLAk9i/TxukMQz9usd4kxjAAmSlPI83TC//AwAw0lMAXpdhbmZt51m7YZuP1dbqimpLjjsHD26oLO/+tYsHczJSE/XTykqL8ytUPlkWgNGkSwoKMkBn44DXPYYxMYzIAyzAhElLj/zXTOzVtrFpcXE3KIY2cARmGYZ9cOPykX1rlowFlmX18+SS0sJKiVEuqVYo5bSaonUyAK+JAa+nbtohBuB1WSTB4TRoENDlIzW3WqLakoNWq5X7v5/1DQBA0p3bF/cv/WHk8tEDG/25cEa4TFKcX9E9SnlZ2etff7n+UZ6HMAAswkJq0uMY3YvXJ8YbSqn+f40i6+nZqOXHbHN1Q7UlBwDAk6uXjxbn5mQ41vXxjz17cltW8vOHrFGPoY+Ycye36b9MnVWU0f36+bevndmFgN6UF6oiBqsrCwCgXVCPMR+5ydUK1ZocLMNQtw8f+I0nEAiDBw+b8zb5uBuXDyOsoR1D34xubm5T61nC/Wssw1aoY1T6HzSfuRwTEYGTvI/Y5GqFak0OAIBru3cszU1LTWrSIWTg22TzMtKfaY1fwEL5sAG66aqltb2LpKggUyWXywD0p68V/WcNiIGwADiGobUc3et/lIZWQ1R7ctAUpb6844/Flg6O7i269xlXlWxpYW5GYVZmCug5+ei/dD5PYKpQSEulkuKCt+oY2kKNhhkLM1unj9jcaoVqTw4AgLtnTvyZ/OjB312GjvmRKzAxrUyOYRh605KZfViKYaCCl07gJMfNs37zB7evHKmKGAAAb96vSccwjPi4ra0++CLIAQBw+JclY/kmQlHXYRFLqpJ79SIxtiA742VFJnIEANp16jP+0J6102i1mqpsKKlQMQXN59LSopyP29Lqgy+GHFkvn8ftWjJ3SGBI+Gh3H9+gqmTPHd6xzMDeAaB78c6udZuyLLBpyUkP3nUo0aaxNM2+ynjx8OO0sPrhiyEHAEBc9IV9yQlxN/pNmLWB4HJNKpO7fuHoxqSEe9cQvRevHSZEIrEVh8sTPnpw89S7DiXadJVapZBKK7axfI34oshBU5R67czvOhAEhzt0ysKdVcke37txHugRQ0sULsnj163n1/740a0L1SqlEiqxdehMpNp0AHj46O+TH6911Q9fFDkAABhKrdi6aFbfuo0DOgX3GDi1Mrmkx/cu79ywaLTxGgmwAAOGTF3DssD8dXjzAoCKiaEvr53y3rl35QgAAIqimIAvsqhl71a/X/eIpUujdj35bcmp/J+/3/U4rOOQ2VYW9u5cDk+IIigO8MaeGARBUJzPMzF1tHOtb2/jXPdff0j/EqqtJ9jb4BsY3OfbyQt2Lp8+MjDtxZPYimQwjOBELfrzrqOjRz39F42wAAuihjaVSIoLV6w4+tLQ2FUxMQAAxkR2NHdzqRswtM/kNeZm1g4ckqMxiJXna8tgGIaVyaUlCqVMKiuTFOUX5aSWSApy+TwTkZW5naupibk1nycw5fNMRCNmdrEsk5UWfJyn9GH4YskBAOAf1GXIwFGzNqyaH9E+OSn+ZkUyXC5ftGDJnnhLS1tHndGLYeHk8e1LDx5cP6NPn++Wdg0ZPE07BFVkGQUAeJX27CFFq9Vuzt5NEEAM9RQwWqyD8rJ0j9dQVov78X+fXbpxaucPeAQfFV80OQAAgrr0Gd+t76j5axZFdk15VrHjsbmFrcvMORuiLS3tHLUKKEPTzPhxna1wnCBXLjuaRuAE8XpY0R9i9F68/gvXKrlQMTE06Yhhht5HtVqlGjGzs7lKrSz7gOZ/VHxxOocxrpw+sOborvWzJ89Zc8HG3tm7IpnCguyUNb9M715WWlKk7R0wBEN79Rq9sLS0MPvAgXUzWJphjYmh7zVWETEQqLzHqIoYAADPUhJiVGqV7F94BB8NX3zPoYWLe92AaVG/XV27fErXJ/GxFyqSsbZxrL140d7HGIphCADIyqSSiPEdTFmWZefP/uOum0udxm/0HgCvifEvDCUAADRF0+MXhLsUleSl/+MGfwJ88T2HFikvHt+OmtLX65tBk37pNzByVUVeW7k5r5KmTu3hmpeTkVy+1iIcPWzuTgCA3zZF9Wcomq6UGFp8IDEAAM5fP7S+uhMD4CsiBwBAYUFO6vyZQxrK5dLSCZN+/svGxrG2sUxRUd6rWXO+qRMbe+kwwgI09m3dXWxq6ZCTm560ZfvikQB63am+60hVOoYeFMqysipcTuBVVvLjfSc2zv4Hzfvk+GqGFWN4eDZoNXBA5Kr9+9bNePb8QTRFUSpjmeCg8O/6hX+3tKg4P/P7BQPqURSlihj+w94Wfh2+eR/lk6YZprA4Jy09M/kxn29iWse9QWBF5KEotTpq5agWKelJFU69qxu+WnJo0aZV2Mjuod9G/bB4ZPPikvwM43yhidhq8YLdT7buWDLy3oPoIxiGc1Yv+uuVqcjMSqdnVEIMmqbZx09jL2zZu2xMPa8mwSP6Tf8dRVGkQj2Dpujx88Kdi0rfrEN1xVdPDgAAkdDcNsAv+Jv6dfw7bN358+hioxeEozjZoEGLkLS0pHv5hdlpJMkVdG0/cGodz4ZBFmZ2TiRO8mQKSUlubsazF6lP7qSmP3uQk5/xorA4N71zm74T27YIHWZtYe8CABUON3JFmXTxushOz1ITKrTFVFf8J8ihhYmJ2DLQv9MQM5GFbcLT2EuPnsScec8iECcHj4a+PoHdHKyd6zSp36obn8cX6nIrIMbz1MexW/eviEh+lXjnw2r/6fGfIoc+6nj4BrVo2r7fzdgL+0pK8zNz8jJeMCxD6cu0b9Uzon4dv46erg0DRUJTCxRBNc9Lp49UbseQlBUXxsRdObx577KRH7stHwv/WXLoQ2gitunTZcSC5FeJsXfjb5yQKSSFDMPQ2t31KILiXdsPmNraP3SYuZmVPYERJIqiGIpqpssMzbAsyzAUTalKJAU5Jy/tW3Hu2qG1n7dVH44acugBRVGMS2qGCRRFMblSVkrTlFqbjyAIwuPwRVyuQEQSXIGALxAjCIqoVEq5QiUrlcmkpTKFtOi/GrKhBjWoQQ1qUIOPDRRFMRz7tGeY2Fk7eVtbOHi+730ogmIONi71/ks71/4p/g2FFP0lav9zSzMbx+EzO5mqVIqPtgyNojgZ1n7QTB+vpu09nX2apaY/fTB31eh3PjvF2cHTd9bYX86KhGZWCqVctnnfz6Nu3j2/62PV90vHB5/x5u3hG2Rj6eAKAODt3qht3JNb/7oTrqeLT+DYQVHbba1quemnqym18n3K8XJr2EokNLMCAOByePzW/iH/qyFH5fjgVdk2AaH/037u2fF/s5E3HWo/GKXS4rzfdi4cfPXWqW366Qq1Qvo+5VBGZFJTasW/Ub+vFR9EDrHQwr5l006DtNe13eo3d3ep2/zDq2WInPz0pGcp8Tf/urDdIIhcacn7xQi99eDiXqm0pBhAs2i288iamsMAq8AHDSs9Og2dg6KoQU8RFNB12POUj7PAxLKMgZE6vygn7X3ul8mlJRFRYTbmZtZOJZKiHKWq5hivqvBBPYdfgzY9lSqFQdfczLddHx5XIP6n9cFxgotjBLeiM1AYhjUIAyWVlRQaSrx9SKMYSpVbkPlcrVbKUATF3lohFCdJnORj6MfeQI2iBE7ycIzg/stDM4JjBIfASR6CoO/VGfzjnqN9YM/vzEwtbQ+e2vJD+5a9IsQiM0sAAD7PRNQ7ZPiCHYdXT3zHohAXB0/f1gGh/wtu0X0MQZAEAIBEWlp84cbhdfcTbpx8kZZ4h2UZyviRKZQyCQCAh7NPi27BA6a5u9RrLpWW5B6/uGvZ7fsX91HMmw4+HJIndHPy9hvaa9KviS8fXPvz4MoIYxkUQfEG3gGduwYPnF7Xw7eVNv3andM7j13Y+XNGdko8AEBQs7BRarVCpqJUCm2MMgzDCQ7J5Se9fHQjKy/taVCzbiMVirJSmqEpDMNJYFnm1oNL+7Rl2ls7ebdtHjaifWCPsRwOjwcAkJmT9uzAqY1zbj+4fACMlvQwDOc42bs3CAn6JjIt8+Wj4xd3LnawdfHxdvdto1arFFdjTm4BADDhiy1bNAnu3639oJkWYmt7AAA1pVY/Sow5d+nv41seJNw4brzQ+MaLqSqzMuAoTq6adyDZhCcyH/V9qEXDuv5dIocvPqjNzy/KSZ8wv5fju5TVv1vE0m7tB05jWYYtKs7PvBpz6s96tf06eLrU9dP2HqNmdbGSykrzrS3s3VfNPfBce+/KzTN7Cfim5iP7zdhkPLzt+Wv9rOOXdi0B0NhhnOw9G3cNHji1RePgvlqZU1f2rNp5ZG2k/n0kwREsmb7tka21o2uJpDDv8s1jm5o2aNOjlp1rXQAANaVSTf6xv1dBUXbKT1O23Heq5dkAQzFdD8yyLJuRnfLkl62ze2flpj6JGr/+urdHw0AAjSfYycv7ftl34rcZAAjSonH7ARGD5+5gWZaJibt8SCItyWsX2GMMjmEYAMCDJzfPLt0wrTOCoLip0MwmtF3/KR0Cw8eTJIkDAJy/cfT3fcc3fP/bwmNZBEGSDMOwgyJboSiKYstm7U60s3b0KCjMzli8YUpHG0sH93FDFuzhcXkCiqLYETM6maioqs0O/2hYsbN2qiMWWdqduLxnuYpSyJ68iItWqhRybb6lmU2tRt7NQt9WTp+QkT+FtO03GQDgfsKNkxPmhzsdOLVpzg+rx7TYfvjXyQAAmTmpz6SV7Ahr2yxsxMh+MzYqlPIyY32kY+veukAvLZt0HjLx24UH9IkBAMCwiME9KIpi8yb8fsPW2tGVohhm8o/9au8/tWn2rGX/a5Sdm5EMAEDgJBk5bNFRABSdvWJ4kw07fxyqX4a0TFI8fcmg+lm5qU8AABavm9BOoZLL5YoyyeQf+3lpiAHQ1KdVz4jBc3egKIr8sX95xJpt877589DKcZv2LNEt8ft4+gebmVrVCu/07dw184+khbbtH6klBgBAQWF22toFR9IIgiQBAPIKMpMBAJk6/OcTdtaOHgAAP/8+rUtmTsrj+wk3js9bNaoFAECZTJKvol6/r8rw3uRAURSbMnLpMQRBkJg4TXB6aVlJ3tPkRwYbiqaNXnYcxwluZeWITMQ2IW37RWIYhimVctnKLXPCGWAYAE0QloRndy8CADx+du8SVOLO6+5Sr/nMpUN9R8zsKPwuKsxepVbqpqrmYisH7efoO6f+iFzY12XttvmDDAowIlS7Ft3HuDp5NgQAOHpu6w9yRVkxAABNU+rcgkxdj2VlYetI4jgXAJhbDy4dyC/M1inGJgKhWf3afu21117uDVtxSR4v4fn9q/lFmpMozcXWjt8NnbcTRVFErVarb949t1srfzf+2l/azziO47Vs3XwOntkyb/Dk1tiidRM76NfXv0GbXkXF+Zmr/5zb/178jZNZeelJGIbjDvZuuv23PTv/b67WEz896+XDvMKsV/lFOa8qe6b6eG+dw8PZp4W1pZ1z8qukB2mZzx9o05esn9Rh+4orChwnCAAABEGR2q71Ax8/u3exonJC2vSL5JBcHgBAUkr834yRfpCd9+pZbn5m8p2H0Ucrq8uT5/evpGe9fAgAUCwpyr5089jGzm36jNd8/5sjpopSGSjPapXS4NcT0qafboixtqrlEdq2/1QUxQgeVyC0FFvpwj0ROMlFUE3XT9OUcv/JTVERg6O2ab83uGWPMY+S7pwDAAj06zSYotTqrfuWjYHyF+LXoE24tu0UTak7tO49jmUZBsdJjshEbK1fJ3dnb/9HT2+fAQAoKsnP1M+zNLd1HjOnqxUAQEr603vmYus3hvLmvsG9GZredeDU5qjcgoznC3/9rrWpqYVtZc9UH+9Njk6twscBsPDbzoVDOCRPiOj2/qHo89THMXXcG+qCyP+vV+Tq6T8Prg8ABrMMBBCkc1Bf3YsoNmo0AABFqRWTFvZxM07Xx6PEmHP61wWaX0SloGm1AQGV6tddK4bhHBsrB3ftdZN6gV0bevl3ZPX2JxSXFuSwLMDmfUtG6k+D45PuXGAYhtXqPR7O9QIQBEFYlmUb1gno9Dz1cYy+36q3eyOdkkuSJDek7TeR+iE0i0sLchBAkOzc9OfHzm+v9ICApOSEW9rP2XnpSdl56UkAAK8yX8Rbmb+OXRbYtGO/wKYd++08unb6ueiDa/KLc1Kqek5avBc57KydvAN82/UGQGD+pN+uMwxDax8eiqAoh+QK9OUdbF28fWo3DY5PijWIYy40MbUmSY7uuIy39m+VoFRamPs+8gxDGzrhIK9HVU+nun76vc2abfMGxD+9c964biiKIvoOQAAAxaUFmfFJsZca1PEPBgAwF1vZuzl6+9O0Wm1maml76vLelfry9rYuum6/uCQ/c9LCvm4MwxjrPwjD0FRVcVfPXTuwuqL0X/+Y03vh5E23nRw8DCIfDuwe8XPbZl1HzFw61Me4DRXhvcgREtQvEkVR9Fz0wfV5hTkpFKVSqmlNV80lBaYIAhDWYdBMoUBsDgCAoCjSplnoMGNycEiewQkEJoKqT0ioAu/FK4LgGqzEqtWvhxWC5BgQ24QvsqhoqkcbRtzWYeXmWd03/3y2BMdwDABg7OCo7UqlQqZQyMou3zq+0aAe+OsVbB7XxLQiElT2PfooqmCrBQCAmlLJF64ZFxTeZfiCzm1eR2BEEBRxsHWpvXre4bRpiwbUkSmkJVWV/87kIEkuP9Cv06ASSVH+9sO/TqxsjmwqMrfp2m6Aziwd0LBd7wMWm+bkFmS+0KYpVQoZy7I6vcDLtUEgiuA4w1JVz7vfwWj1PtB358srzE7Rr1No8ICpN++drzJ6kD5UakVZelZyvEstjUJrY+HgzjA0dT327G6Z3PAlSMpK8rSLlXyeQOjsULtJSvrTf22jk9BEbK1UKKTbD68a//e9C3uH9p70q0utOo3R8saZmVrYOtm7N0p8GXe1qnLeebYyfugP+7kklxf/NPZCVcaTv+9d2KffReI4jg8MG7dcX6ZUWpSjUKl0v1oBXyge2nviWqjA7qJvmfzQk6Mx9I39s7rysvNePaX1AvG71qrd0KWWV1PjMlAUxUxFFvbG6QAAF28c/V33XRiGEQTJufMw+rCxXEp60gP966BmocMqKo/PMzFHyxXfdwWKoPjCyZtudwrqPREA4FlK/I05y0c0vXjjyEZW772YmJhavLWsd/lCDMM59TwbtwUAOHXFcPw0RvKrp7GpGc/i9NMa1WseYvyrP3x60zz963bNu48c1mea3jEaCDKw+7gV8yZuuKGrLIp90FoQihiawDkkx2B4i314zeBFzhyz/JSQ//qUSBTB8Wmjl59ZNHVrbEXOQhdv/rVBWlZSpL1W0zT94PGtU8ZyCUmxBjO44MAeo7u3H2Swf7a1f8iw1XMPpfl4Ne34ru0D0AzlCIKiLZt2Hqyf/seBFRG5BVnJ2uuikoI3JgHGeOvDRlEUmzz852NcDo9fXFqQl/zqrd0fe/X2qT9cHb10Z6MRBEnOm7j++o9rx7XR7lm9cOPohu4dBs8yEZiaAQBgGIa2b9ljVCu/ToPlSlmpCd/UAsMw7OCpLQtwjOBStFrh5dqghf4Xebj6NI99dO2I9rqWrVs9/XwBT2RRJn9tQCO1YZrKIRRoTP5anLq8Z2Uz37a9tdciobnVuh+PZRUU5aRiKEaITa3sGZpSr9k+rz9FV7Tcz7LX7pzZ0SXomwkAAGv+mNMXym03+rgbf/1YelZKYi07lzoAmlOx+3QdszC03cApEmlxvpnYyp5DcgWPnsZeTHweF629L6BRWwMjnm+9wG4ZOSmP9dMQQFAcw4lati7e3TsMmf3X+e0/6drP0URgLCktyEvNePbgzfobospuOrBJp8F9Qkf8oNvqBwAFxbmZd+KuHtp7YsNMY6+voICuI1r5dx7irbceoQ+VUq64Fntu59YDy0axLMs62LjUixyx6Ii9tfMb7n7Z+RnJB09tnnvz7rmdbk7e/mHBg2b6NwrqqS8jV8hkl/8+tvHizb9+79dt7BK/Bq276+eXySSl0XdO//k46e7l1v4hQ/0atumhn88wDPMoMeb8jiOrIzPLLZodWvYaN7jXxFVaxVIfjxJjLuw5vmFWVfqBo51bg8XTtz2gaLVqwoJwl1JJUYVuBWITc9sFUzbHWJnbvGGbKCopyDl0Zsv8Szf/2gAA4OPl17FLm76TfOu1MDjvhWEYNunlwxsXb/618cbdczsAAEic5K9ZcPSV0MTUHAAg/mns5eRXibG+9QK71rJz9c4vzEqb98vYFkWleW/ds1slORrXa9ndXGzpIJNLixRKhQxFUYzHFYiEJqaWF24cXW9MjsAmnQabi60cyuSlhXJFmUStVikYhmVQFEU5JIfP5wnFXA5feOLirp+1U2AMw4mu7QZMb+ITGEYQHK5SqZTfS7h27NiF3Uu0vzp3p7oBPl5NO0jLSvIVSplErpBLMQzDTYVm1gKB2Co27urhJvVbdiuVFOWVySVFNE1TBEGSQoGpFY8rMM3KS0uyt3b2kpQV5ymUMqlKpZSxmvgcpkKBqWVcYszZzJyUBG07rM3t3fp0Hb3YzqqWB4ZiWJmsrPTklV3L7yfcPPa2BwoAMG7Igr0CrsBs6cZpnVmoIh4DAHTvMDSqUb1mXbgkT0AztDrxRdz1w6e3zJMpynRKrE/tph0c7TwaSOUlBXJ5WQnDMAyOYQRJcnlikYVdflHOq1v3L+4pF0cb+7Ts5t+wTbi9tbMXgZMcFlhWrpBJ7ifcPHny8u6lVU2Pa1CDGtSgBjWoQQ1qUINqg0+yy97O27tJ2/HjFxelpT2TFxXlyyWSIqVMJgUAILlcPsnnCwXm5tYCCwsbvkhkjhEEB+NwuJRCIct49Oj23SNHNhVnZr40Pi60Bh8Xn4QcIltbp9YjRkS5+vm1E9vbu6AYVqFlVq1WqwEAMAzDjd3+yoqLCx6ePLnz4urVM2j1+21mqsE/wyePz9F65Mi5bceOXaCftn3s2I55L14kyEpKCgAABGZmVi5Nm7ZrEBIy0DUgIBjDXq8vpMfH39kbGRlWVlDwXntWavD++ORxSDPi4w1iY1EqlTr13r1oaX5+JqNWKxm1WinJzU1/dOrU9l3jxnWK3rz5J0Zv/bqWj49f2Ny5W+DNRbQa/Mv45A+YUioNrKq0Wq1iabrSSDjRv/8+L/7s2X36abVbtQpp2rv32I9Vxxpo8MnJYWy6ZXUnm1SOm9u3L2No2kDGvXnzTh+hejXQwwfvsn9f0GpDP05GpVKxb4mhlZOUdF9SUJBtam1tp01z9fNrV5EszuXy63fuPDA/NfXpq/v3o1GC4Lj5+7enKUqddv9+NK167WTMNze3qdO2bU97b+8mJhYWNgqptCQ7KSku/syZPdK8NxemMJLkOvj4BFi6udU1tbFxJDgcnkoul2Y/fRqXeOnSYTDyldWHhYtLHd8ePUbc2bdvbUl2dqqbv39HFz+/IAzHiZwXL+ITzp7dR5f7uPDEYss6QUE9rdzcvJVlZZIXf/99Lv3hwxuVlf2x8MnJ8U+DqT2/du1Ek/Bw3Z4ODp+vc+vjm5lZm1ha2jUKC/vWr3fvsTiHQ15avz4q7+XLhHEHDyYKLCwsAQDW9e5dP//ly3gAgNqtW4eFL1q0B8VxPD8l5SnJ4wnMHR3dGoaGDmoXEbFo48CBvvkvX+oW4xp17z68Y2TkCp5IZMowDEur1UqCw9FtvSjMyEj7rU8fb0qhW4xETe3snEzt7FzajBo1z83fPwgA4Nn166cahIYOaRcRYaCU+/boMWLb8OEtzRwdaw/duPGSqY2NbmtFmxEjoo4uWDDs4YkTf/6TZ/dP8cnJ8U+RkZBwR58cWtQPDR0SFhW1GcNxHNGb/jI0TQ9at+6slhgAAFpi1A8NHdJj/vw/UAxDt40Z0yHlzp2LCIKgPX74YXuDkJABBIdDjNy1697i5s21vp5I88GDp/BEItP0R49ito0c2ZZlWbrT1Kmr/fr0GQUAYO7g4GTr5eWbHhd3AwBg3F9/PRPb2TljuOHSf+CQIdM8WrR4Y0h08fUNJPh80dh9++IILtdgvw+CYUizAQMmfmpyfDEav0IqLa0o/fmNG6c29OvX4Nbu3b/qpzcMDR1i4eTkdXbFiqkl2dnpucnJiQAAfHNz266zZ29AMQzNfvbsUUpMzAVgWZZlGDr76dMH2vtJDoe08/ZuAgCAEQTJEwrF0sLCvF3jx3emVCoZrVYrTy1ePFYll+vcHb3btQvXft4zcWLomu7dPVLu3o3WqxaIHRxcfx84sMnKzp2drm7c+KN+3oyrVwuvbtq08Ndu3TzW9+nTgFKpdB7i5o6OHhVuxvmI+GJ6Dp5IJNa/ZhiNr4e8uDhfXlycn/viRbx+voWLi9eOiIiOKTExF1Lv3bti7uzsBQAQOHToNJKr8UJXlJaW1O3QoS8AICSPx7dydzfwJLPz9m6S9eTJXYLL5ZM8nvDE4sVjFKWlOjdAjCQ5spKSfJLHcwQAsPH01G0FKEhJSQQAKMnONggTceKnn0bnPH16HwDgyoYNUa1GjPheF+xWrVb/vWPHCoailAAA948d+8Ovd+9RAAAElytAEARlWfaTxTj9YshhWf5ytch98SJB/5pSKg3c9h6ePLkjJSbmAgBA1pMnd7OePLmL4jjpP2CAbve/Y8OGze3r1m3C0LTuF6qQSiUojuNZiYn3Hp8/fwAAQCGRFK/s3NlBrVCUAQBwRSIzt4CATiGzZq0ViMU6R10Ux98M02A0O8vT02MAACiVSqkla15aWpKWGAAAqXfvXtWSA8WwjxE0qUp8MeSo3aZNN/3r9Lg4g725xvaTnKQkAydnAACOQGCK61lbY/fv/+3M8uXj3+HrWZVMVorhOOE3YEBk+4kTf0YAIOn69dPmtWq5Wru71wUAkBUX572tIFVZmUHAGEatVkM5OUqzslL185QSSfE71O2j4XOQw4D+KEEQCIpiVU1ncS5XILKzc9ZPu71nj4GOgZGkgRKnNcXrg9Sb4ZSXyzeWqbjGCNLy229nNx80KJIvFpvnJycn7Z0ypXtBSkri8O3bb79TGeUwnsob1FkiKaws73Pgk5NDf/oHAIBoxtsq+8smPXuOJAhC12XfP3ZsW35ysoHXNWbUpVfkJ6lWGm6cdvL1DTSWqQiuAQEdgsaMmY/hOFZWXFy4ZehQf4VUs1EJI17vXtPXR74GfPbZCobjJIJVvnEH53L5Tfv00ZnKpQUFuZfXr48ylkMqGu+NoJRISvTXaSycnDztfXyaVSSLoOX7bBAECZk5c512SlqQkpKoJQYAAEcgEGk/0+WryoYFIVU+Y8Ro9dkgr4rn8inwyclhvGsNxTAcreQhICiKD1iz5pyli0ttAAClTFb2+4ABTSS5uW/spic4nLdGJKbVakV8uZJZ/t1o+OLFe7lCoTmU914IiuIiW1unyHPnsnEuV4BiGGnuoNm6CGBIBhTHCVO94U5oZWWnbaReGwyesY50emXoZ+vn8USGe4jRtxDt38YnJ4epra2B7oBiGIITRqGxEQSx9/EJmHD8+AvXJk0CAQDyUlOT1oSFeUjzKj5y07gMksczqUju0po1MymVSjfumzs4OE88eTI54vDhp98dOZI08cSJ5MhTp1IVpaUFKIqiDEWpSrKzdd9p5eZWt82YMQv5ZmbWA1avPoXp+aZ4tmzZtW1ExE/Dt22L0a4a84RCsUF7cRw3utZFGxBZGG6zFFpZGW67RN8v4NuH4pPMjUwsLe2bhIePsfH0rO/cuHFrvlhs8ItQSKUSaX5+pkIiKcYIgiOysXEUmJlZAACUZGdnRG/Z8uPDkye365mmdRBaWTkEDBgQWa9jx75iOzvdBqHizMzU57duXUi6cuXos+vXT2jTEQRB/AcMiOw4adKyipyO1Eql8srvv8+P2b37V6p8rcMtIKDDwLVrTxv3cPHnzh3iiUSm7s2a6SL5KKVS6blVq6bJiory6rZvH14nOLgXQZI64iacO3fgxvbty3impuZNe/Ua6x0crNuIRavVVPSWLT/ePXRoY+Pw8FEtBg2ayjUx0ZH8VVzcrcSrV/+K3b9/vUomq9Ao+G/ik5DDyt29fpuRI6MYhqEZmqZYhmFYhmEQFEURFMW0QwuCoijLsiytUikl+fmZz65fP/3qwYNrDFV5LAnnpk3bNgkPH81QlNqoXBTFMEJSUJB9fsWKScb3+XTqNLBht25D7H18/Dk8nolcIilKjY29Er1580+5z58bTIMRBEH8+vePrNe+fbjAwsK2OCPjZdzx49sfnT27y87Lyzd4/Pglpra2ThmPH9+5smHD3OL09Jch33//O0cgELI0rT3xiUVRFEdxHH8ZE3PJvFYtd7GdnRND01R5PqKpMUHc3rt3TbP+/SfSFKViaJrWtgnFMBzFcfzCqlUzSrI1IaRq8LFR4zhUgxq8H76qM94QBMHftUkoimLoOyxk0TRNvavLu2bd4+vxkEc4JFdIElwujpNcAsMJkuQKUBTFOSSXh6AoxiG4fBTFcJIgeRiG4RhGEBiK4QROcgmC5BI4ySEJDh9BEATHcAJFcQLDNHE0OCSXj6IYhiIohmEEiWMYgWE4B0UQhCS5fBwjCAQFBEUxAkcJksAJjeaOIAhe/hlFEAxB3rQFICiCGcfrQFEMRyogB4IgKI4ShJEs9i5TQ7qCkExqSqWsiIMMQ9PGG6dpmlYDy77hBKSR1XjAUWqVEkDjKUTTapWaUilZlqHUNKVmaYZRqhQyFliGoWm1UiWXASAszVAUTdOUujxCIkWplDSj0V/UlFpFUSoFzdCUSqWQUbRaSdGUmqIoNUWpFBStVqkptZKmKTXD0LRKpZSpabVSpVYpaFqtVqoUUoVCXvYl9xwIvEfPZ7zV4UNgHNztLXirG2QNalCDGtTgkwMvtyQiCIrjelbFGlQMDMM/+EDGdxqH+4WNXVbX3bd1mVxacv764XXujt7+Pl5NO8gVZcVnrx9edz/++l9Dek5a4+5SLyDu8c1Th8/+Mb+ysrp3GBpV38svWKmSywsKc1ItzG0cHzz++/T564crPN7b1srRa2S/mZvORR9aezvu0v5hfadtyMpLe3768r7lFcm/L0z4Yst+XUcvcXWq0yS/MDv1l62zemjqOSQqoFG73k9fPryx7dCbx268Dxp4NwvpENgzQkUrFQggYG1h73bh+pH1V26d2PxPyxwaHrmunmfTdulZL+NVlFLOJbkCU5GF7dFz234SC81tO7XuM/775d/6fki93xmjB87ePuF/C3WLVoN6jF85c8zKs/oy00etOP0uZQ3pNWl19/ZDdNHzVny/J8nM1KpWZfLjhy7YW9u1fst/Uu93xayI1Zf6dR37s/baztqpTlj7wd9/aLk9Og6NmvS/hYf00xzt3Or/NHXrvQ8te1XU/hR7a2ddNGQne49GXYMHzuTzhOazv1tTZYzRd8E7WwY37/15ZIM6fp2x8vNjD53ZusDbw7etUKAJxejj2bT9+esH1wMAcEmesGu7gdNbNO4wUBux3wiIUi3XrZMoVYoyVXk0YQQQpLlvcL8uQd9M1hNHZHJNjCwcxUk7a8c62hxXxzp+3TsMjXKwca7LJXkiSzNbVyd794YoimK1bF3rW5vbu2EYTohFlg6hbQdMb+LTskdF8Ux//WN277Ytuo6yt3aui6IoNnrAnG1nog+sAtDELWvXLGxUaFC/aWKRhQMAAIbihK1lrdoIguIIgmJikYUDh+QJjdvZpW2/yVsOrjDYnfcq62V84suHNwAAIXGS37R+616N6wWG6ctYWzh4cEmeSSu/Lv8zEbwOd2lQOIIipdKiXAAAR3v3hqWSwuzo2ye3UmqlQqlSSE34Iks7a8c6DjYu9UiCIzA1MbezNrd3g3d87+9MDpqmlE+ex11uE9BlKADApGE/HU7NeHa/lV/nIQAAowZ+vy0pJeGms4Onb8Tgubtu3D2329vTt033DhX++tjarvWbh7btP23MgKgdV++c2l5WfqbKlBFLjmfnpT8vLi3I+iVq30tU7+gpLocvmjZmxem6nk3aAQCEdx7+g7WFnWtM3OWDE4ctOszl8E2mjVp+spF38xCGYdjabvWb163dtENdj8btQtr2mxITd/mAf6O2vRvUaRZiXCGZXFK47dCqcRFD5m5v36JnxB8Hlo9VqRQySzNblx8iN95OTI67nvgyLnrW2F/OOjvUblzfy6/jj1O3xGIohrvUqt142cxdjx3t3Axijdta1vKUy8tKJNJi4xjt7I7Dq8YDADvsm+m/F5XkZzSo06xzlzbfTMZQnOjdZcQPs79bdaFt826jzEwt7WZ/t+ZSZe+lfWCviNC2/af2DRn1E0UzVGn5d7Esy9AMTXVrN3B6v65jlzAMTXm41ms2uNekXysryxjvtaYQ9+TWWb/6QeFckmsiK5MWnbt2aH2jui1CRCZmthlZKQllstKCoGahw/OKslMa1vHvJJGWFiiV8jeO91SpFLLUjOcPr9w6seV67OltHVr2GtvIu3lXRzv3hjhOks4Ono0szW1dUtKf3cPLD5oBAFAoZaWJzx9EUwyt5hJcky5BfScK+aYW9Wo3bfci9fFtDodnsnLrjO6N6rXoiiAIa2lm63rl1rFNA7qNXcrQlMrHy69jiaQwW8AXmlXUvpt3L+wuk5YW+zVo3TMt89l9AIBGdZuHPnkeF52Zk/r4RdqT29djz+0M7/zt/AdP/j4pK5MUUbRakfwq8Y5CJZMYe4abia3skbfodX8cWBGhopQKuVImbVgnoDPNUOq4J7fO5BZkvTx9df/KYxd2LOYQJK+SHhhi4i4duHbnzI4XaU9uoyhisGosV5QV7z+1cU5tjwYtcYzg2FjW8lzz55xvoIqdefp4L/+AG7HndvXqPGyBhbm9665ja6cWleZnDwmf9GstW9d6q7fN7QsAYGZqZX/68v5fnibHXausHJLkCkrLivPL5JLC+KTYC+ejD63rHTp8/o0753c/S024feV21YoarVIqzMRWDgqlXHr59omtNE0pLwCs0+aLTMwsnew9fC3MbBwxDMf4fKHprQeXD749vjjL3om/dkRkIrbSWkXFInNbhVKmI3iZrLSI/5pcuhdP0xQFRkRIfBF3TSy2sjcztXIsKsmr8LiPMYOitie9uB/9KPH2GTNTc1sAjVVWpX7tTW98CpU+SqXFeVJZaf6Fm0d/U6sUb8QtKZEUZRUW5qTVq+0XbGVm56yiVO98Yvh79RxyZVlx3OO/j88YvexkiaQwh6YpxfU7Z3eM7D9zo7r8vLC8guy0kOB+07T3CPiiin6lBo11c/Ju+vBJzLn7CddPtAkIGYqiGocYE01o6TfqiGI4kVeQlSwyEVsJ+BpnGgIneSiqmeLejb92bO6EddHbD62awDA0VVZWWuzl1kDrL4oKKxnDtXXTN5fnF+amNazTPER78qQJ39T8bnnUZBZBQLMMgBNCkZmNcRfBsgwdnxhzbtyQeTuNT660Mrd3d3X08lMqZKWnrx74RWhiasGUm9nL472/1aqKIq+XD6TS4nylSqHxbNfTqViWZX/Z8n3Pb7+Zsj63IONFBcVUivf2LLr14PJBgiB5akrjCHM/4eZJGytHD23Y6rPRB1bNHLvy7Jxxa66USktyj5z948cy2WvH246tek9o6N08RC6XlNhaOnjwuELx85SEW+euH/yVZVlIfpV0b8n0Px/mF+WkXrr51yaC4PDcnLz9+4aM/HHz/qWjAnyDvymTleS/fPXkzu+7Fw1bOnNnQnrWy/jHz+5fPXZhxyIGAI6c/XOhjaWDe5lc4829ZseC/tNHLz/l37BNr8Li/Mw9x9fPqKhtHQJ7fde2WdgoDofDV6rkslOX9y678/DKoYBGQeFDek38ValSyrkcrmDHEc3Jl89SH938cfLm2KcvHl6naVrt6ODR8FX2ywTdSwKA33f/9G3/sO+WrV1wJD0l/el9hmWZktLC7Jt3z+998erJrfp1/DpGDJ63J78wO8W/QVCva7dPb+sQ2HOso51Hw05t+kZyCA5PLLJ26NS61/iz0Qd1+kLvLiMWCgSmFiP6z9xy79H1o9Exp/4A0CjPA8LGLfdwqde8mW9wv1v3L+7NLcx8mZuXlXz51vF/PHV+J+AoThI4ofPXRBAUN9bSEQTFTfhiSxR98wgMDMMJDMMJHMM5uMZQ88ZJBnye0FwbeF4rj2E4AYAg2s/aM2G5JF/E55mYGn8PgRtuVcAxgiPgCS2qOnsWRXFSVz/0taENQRBEwBOa87mCN76Hy+GJoPw83MrK1cjxRRZmNs5cDl8EesMPiZN8HNeco6s9jxcvrweO46S2TqjRmbC4Xl01z+Y19J6R7p7QoP7ToAY10AJBUHzehN9uTh6x5HgtO9f6b7+jBv8p4BjB/afLDf8HmMqOuZTjQPEAAAAASUVORK5CYII=" alt="Achievers Dream">
+    <h2 id="h-title">How to play</h2>
+    <section><h3>The heist</h3><ul>
+      <li>Light up every <b>crystal</b> with the laser. The beam passes through crystals, so one beam can light several.</li>
+      <li><b>Drag</b> on the board to rotate the mirror, laser or glass that's picked. Use ↺ ↻ for small turns.</li>
+      <li>Things you can turn have a dashed ring. Walls stop the laser.</li>
+      <li>When every crystal is lit, the vault asks for a <b>code</b>: a question about the angles your beam just made. Each wrong code costs 1 ★.</li>
+      <li>Early levels show i and r. Later levels only show the angle between the ray and the mirror, so you have to work out i and r yourself.</li>
+      <li><b>Calculate the shot</b> levels lock the mirror: type the angle of incidence needed, then fire.</li></ul></section>
+    <section><h3>Colours</h3><p>Change the screen theme with the colour dots at the top, and the laser colour under the board once you unlock more.</p></section>
+    <section><h3>Stars</h3><ul>
+      <li>Light the crystals within the par time for <b>3 ★</b>, within double the par time for <b>2 ★</b>, or any time for <b>1 ★</b>.</li>
+      <li>Each wrong vault code costs 1 ★ (you always keep at least 1).</li>
+      <li>Each hint costs 1 ★ from that level.</li>
+      <li>Collect stars to unlock new laser colours.</li></ul></section>
+    <section><h3>Quick Fire</h3><p>10 questions with no time limit on reflection, refraction and using mirrors to see round walls. Faster answers earn a bigger speed bonus, and answers right in a row build a streak bonus. You never lose points. At the end, your score gives you a rank, from Light Learner up to Speed of Light.</p></section>
+    <section><h3>The physics</h3>
+      <div class="rule"><b>Reflection:</b> angle of incidence = angle of reflection. Both are measured from the normal.</div>
+      <div class="rule"><b>Into a denser medium</b> (air → glass or water): light slows down and bends <b>towards</b> the normal.</div>
+      <div class="rule"><b>Into a less dense medium</b> (glass → air): light speeds up and bends <b>away from</b> the normal.</div>
+      <div class="rule"><b>Along the normal:</b> light goes straight through without bending.</div>
+</section>
+    <button class="go" id="h-close">Start the heist</button>
+  </div>
+</div>
+
+<script>
+// ---- Ray engine (shared by page and solver) ----
+const RAD=Math.PI/180, W=360, H=360, EPS=1e-6;
+function rot(px,py,a){const c=Math.cos(a*RAD),s=Math.sin(a*RAD);return[px*c-py*s,px*s+py*c]}
+function mirrorSeg(m){const[dx,dy]=rot(m.len/2,0,m.a);return[[m.x-dx,m.y-dy],[m.x+dx,m.y+dy]]}
+function blockPts(b){return b.pts.map(([px,py])=>{const[rx,ry]=rot(px,py,b.a);return[b.x+rx,b.y+ry]})}
+function inPoly(x,y,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const[xi,yi]=P[i],[xj,yj]=P[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c}return c}
+// ray P + tD vs segment AB -> t or null
+function hitSeg(px,py,dx,dy,ax,ay,bx,by){
+  const ex=bx-ax,ey=by-ay,den=dx*ey-dy*ex;if(Math.abs(den)<1e-12)return null;
+  const t=((ax-px)*ey-(ay-py)*ex)/den,u=((ax-px)*dy-(ay-py)*dx)/den;
+  return(t>1e-4&&u>=-1e-9&&u<=1+1e-9)?t:null;
+}
+function segPtDist(ax,ay,bx,by,cx,cy){const vx=bx-ax,vy=by-ay,L=vx*vx+vy*vy;let t=L?((cx-ax)*vx+(cy-ay)*vy)/L:0;t=Math.max(0,Math.min(1,t));const x=ax+t*vx-cx,y=ay+t*vy-cy;return Math.sqrt(x*x+y*y)}
+function trace(lv){
+  const e=lv.emitter;let px=e.x,py=e.y,dx=Math.cos(e.a*RAD),dy=Math.sin(e.a*RAD);
+  const segs=[],events=[],lit=new Set();
+  const mirrors=(lv.mirrors||[]).map(mirrorSeg);
+  const blocks=(lv.blocks||[]).map(blockPts);
+  let inside=-1;
+  for(let k=0;k<blocks.length;k++)if(inPoly(px,py,blocks[k]))inside=k;
+  for(let step=0;step<40;step++){
+    let best=Infinity,kind=null,info=null;
+    const consider=(t,k,i)=>{if(t!=null&&t<best){best=t;kind=k;info=i}};
+    mirrors.forEach((s,i)=>{if(inside<0)consider(hitSeg(px,py,dx,dy,s[0][0],s[0][1],s[1][0],s[1][1]),"mirror",{i,s})});
+    (lv.walls||[]).forEach(w=>consider(hitSeg(px,py,dx,dy,w[0],w[1],w[2],w[3]),"wall",null));
+    [[0,0,W,0],[W,0,W,H],[W,H,0,H],[0,H,0,0]].forEach(w=>consider(hitSeg(px,py,dx,dy,...w),"wall",null));
+    blocks.forEach((P,bi)=>{for(let j=0;j<P.length;j++){const A=P[j],B=P[(j+1)%P.length];consider(hitSeg(px,py,dx,dy,A[0],A[1],B[0],B[1]),"edge",{bi,A,B})}});
+    if(best===Infinity)break;
+    const qx=px+dx*best,qy=py+dy*best;
+    segs.push([px,py,qx,qy,inside]);
+    (lv.targets||[]).forEach((t,ti)=>{if(segPtDist(px,py,qx,qy,t.x,t.y)<=(t.r||10))lit.add(ti)});
+    if(kind==="wall")break;
+    let nx,ny;
+    if(kind==="mirror"){const s=info.s;const ex=s[1][0]-s[0][0],ey=s[1][1]-s[0][1],L=Math.hypot(ex,ey);nx=-ey/L;ny=ex/L;}
+    else{const ex=info.B[0]-info.A[0],ey=info.B[1]-info.A[1],L=Math.hypot(ex,ey);nx=-ey/L;ny=ex/L;}
+    // face the normal against the ray
+    if(nx*dx+ny*dy>0){nx=-nx;ny=-ny}
+    const cosi=-(nx*dx+ny*dy),iAng=Math.acos(Math.min(1,cosi))/RAD;
+    if(kind==="mirror"){
+      dx=dx+2*cosi*nx;dy=dy+2*cosi*ny;
+      events.push({type:"reflect",x:qx,y:qy,nx,ny,i:iAng,r:iAng,dx,dy});
+    }else{
+      const b=lv.blocks[info.bi],entering=inside<0;
+      const n1=entering?1:b.n,n2=entering?b.n:1,eta=n1/n2,k=1-eta*eta*(1-cosi*cosi);
+      if(k<0){events.push({type:"trap",x:qx,y:qy,nx,ny,i:iAng,r:iAng,dx,dy});break;}
+      else{const c2=Math.sqrt(k);dx=eta*dx+(eta*cosi-c2)*nx;dy=eta*dy+(eta*cosi-c2)*ny;const L=Math.hypot(dx,dy);dx/=L;dy/=L;
+        events.push({type:entering?"enter":"exit",x:qx,y:qy,nx,ny,i:iAng,r:Math.acos(c2)/RAD,dx,dy,n1,n2});
+        inside=entering?info.bi:-1;}
+    }
+    px=qx;py=qy;
+  }
+  return{segs,events,lit};
+}
+const rect=(w,h)=>[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]];
+const LEVELS=[
+ {id:"r1",world:"Reflection",t:"First bounce",h:"Rotate the mirror so the laser bounces up to the crystal.",
+  emitter:{x:20,y:300,a:0},mirrors:[{x:200,y:300,a:90,len:56,mov:true}],targets:[{x:200,y:60}]},
+ {id:"r2",world:"Reflection",t:"Periscope",h:"The wall is in the way. Use two mirrors, like a periscope.",
+  emitter:{x:20,y:320,a:0},mirrors:[{x:110,y:320,a:90,len:56,mov:true},{x:110,y:90,a:0,len:56,mov:true}],walls:[[200,180,200,360]],targets:[{x:330,y:90}]},
+ {id:"r3",world:"Reflection",t:"Angle matters",h:"The laser isn't level this time. Angle of incidence = angle of reflection.",
+  emitter:{x:30,y:330,a:-60},mirrors:[{x:150,y:122,a:60,len:56,mov:true}],walls:[[260,150,360,150]],targets:[{x:225,y:252}]},
+ {id:"r4",world:"Reflection",t:"Around the wall",h:"Three mirrors. Send the beam over the wall and down to the crystal.",
+  emitter:{x:20,y:200,a:0},mirrors:[{x:90,y:200,a:0,len:50,mov:true},{x:90,y:50,a:90,len:50,mov:true},{x:280,y:50,a:0,len:50,mov:true}],walls:[[180,90,180,360]],targets:[{x:280,y:300}]},
+ {id:"r5",world:"Reflection",t:"Aim the laser",h:"The mirror is fixed. Rotate the laser so the beam bounces off the mirror onto the crystal.",
+  emitter:{x:40,y:40,a:0,mov:true,step:1},mirrors:[{x:330,y:180,a:90,len:300}],walls:[[0,190,220,190]],targets:[{x:60,y:300,r:12}]},
+ {id:"r6",world:"Reflection",t:"Crystal chain",h:"Light all three crystals with one beam. The beam passes through crystals.",
+  emitter:{x:20,y:60,a:0},mirrors:[{x:300,y:60,a:90,len:50,mov:true},{x:300,y:300,a:0,len:50,mov:true},{x:60,y:300,a:0,len:50,mov:true}],targets:[{x:160,y:60},{x:180,y:300},{x:60,y:170}]},
+ {id:"c1",world:"Reflection",t:"Calculate the shot",h:"The mirror is locked. Work out the angle of incidence needed, then fire.",calc:true,
+  emitter:{x:30,y:200,a:0},mirrors:[{x:200,y:200,a:100,len:56}],targets:[{x:275,y:70,r:12}]},
+ {id:"c2",world:"Reflection",t:"Trick shot",h:"Use the angle between the incoming beam and the crystal to find the angle of incidence.",calc:true,
+  emitter:{x:20,y:320,a:-30},mirrors:[{x:190,y:222,a:20,len:56}],walls:[[200,60,200,180]],targets:[{x:90,y:138,r:12}]},
+ {id:"g1",world:"Refraction",t:"Into the glass",h:"Aim the laser through the glass. Watch it bend towards the normal as it goes in.",
+  emitter:{x:30,y:50,a:0,mov:true,step:1},blocks:[{x:190,y:190,a:0,n:1.5,pts:rect(130,170),label:"glass"}],walls:[[300,0,300,250]],targets:[{x:330,y:330,r:12}]},
+ {id:"g2",world:"Refraction",t:"Spear the fish",h:"Light bends at the water surface, so aim carefully to hit the fish.",
+  emitter:{x:30,y:40,a:0,mov:true,step:1},blocks:[{x:180,y:285,a:0,n:1.33,pts:rect(342,150),label:"water",water:true}],walls:[[12,212,12,360],[348,212,348,360]],targets:[{x:290,y:335,r:12,fish:true}]},
+ {id:"g3",world:"Refraction",t:"Shift the beam",h:"Rotate the glass slab to shift the beam sideways onto the crystal.",
+  emitter:{x:20,y:120,a:0},blocks:[{x:180,y:150,a:90,n:1.5,pts:rect(150,50),label:"glass",mov:true}],walls:[[300,90,360,90],[300,110,360,110]],targets:[{x:340,y:150,r:11}]},
+ {id:"g4",world:"Refraction",t:"Mirror and glass",h:"Bounce the beam off the mirror, then through the glass to the crystal.",
+  emitter:{x:20,y:330,a:0},mirrors:[{x:120,y:330,a:90,len:56,mov:true}],blocks:[{x:220,y:150,a:0,n:1.5,pts:rect(110,120),label:"glass"}],walls:[[0,240,80,240]],targets:[{x:304,y:40,r:12}]}
+];
+const AD_LOGO=document.querySelector(".adlogo").src;
+// ---------- topic layer: what each level teaches and asks ----------
+const RULES={
+ Reflection:"<b>Law of reflection:</b> angle of incidence (i) = angle of reflection (r). Both are measured from the <b>normal</b>, the dashed line at 90° to the mirror.",
+ Refraction:"<b>Refraction:</b> light bends when it changes speed. Into a denser medium it bends <b>towards</b> the normal; into a less dense medium it bends <b>away from</b> the normal."};
+// labels: full = show i and r; glance = show angle to mirror surface (work out i yourself) and i only for refraction; none = normals only
+const MODE={r1:"full",r2:"glance",r3:"glance",r4:"glance",r5:"glance",r6:"glance",c1:"none",c2:"none",g1:"glance",g2:"glance",g3:"glance",g4:"glance"};
+const VAULT={
+ r1:[{q:"At the mirror, what is the angle between the incident ray and the reflected ray?",ans:90,mirror:0,why:"i = r = 45°, so the two rays are 45° + 45° = 90° apart."}],
+ r2:[{q:"The ray makes 45° with the surface of Mirror 1. What is the angle of incidence at Mirror 1?",ans:45,mirror:0,why:"i is measured from the normal: 90° − 45° = 45°."},
+     {q:"In a periscope, the two mirrors are…",choices:["parallel to each other","at right angles to each other","both flat on the ground"],ans:0,why:"Two parallel mirrors at 45° turn the light 90° and then 90° back again."}],
+ r3:[{q:"The ray makes 60° with the mirror surface. What is the angle of incidence?",ans:30,mirror:0,why:"The normal is at 90° to the mirror, so i = 90° − 60° = 30°."},
+     {q:"So what is the angle of reflection?",ans:30,mirror:0,why:"Law of reflection: r = i = 30°."}],
+ r4:[{q:"The angles of incidence and reflection are measured from…",choices:["the normal","the mirror surface","the wall"],ans:0,why:"Both angles are always measured from the normal, the line at 90° to the mirror."},
+     {q:"At Mirror 3, what is the angle between the incident ray and the reflected ray?",ans:90,mirror:2,why:"i = r = 45°, so the rays are 90° apart."}],
+ r5:[{q:"Look at the angle between the ray and the mirror surface. What is the angle of reflection?",dyn:true,mirror:0,why:"r = 90° − (angle between the ray and the mirror surface)."}],
+ r6:[{q:"Each mirror turns the beam through 90°. What is the angle of incidence at each mirror?",ans:45,why:"The angle between the rays is i + r = 90°, and i = r, so i = 45°."}],
+ g1:[{q:"As the ray went into the glass, it bent…",choices:["towards the normal","away from the normal","it did not bend"],ans:0,block:true,why:"Glass is denser than air, so light slows down and bends towards the normal."},
+     {q:"Inside the glass, the angle of refraction is ___ the angle of incidence.",choices:["smaller than","bigger than","equal to"],ans:0,block:true,why:"Bending towards the normal makes r smaller than i."}],
+ g2:[{q:"Why did you have to aim away from where the fish seems to be?",choices:["Light bends at the water surface","Water reflects all the light","Light travels in curves in water"],ans:0,block:true,why:"Light refracts at the surface. That's also why the fish looks shallower than it really is."},
+     {q:"Light travels ___ in water than in air.",choices:["slower","faster","at the same speed"],ans:0,why:"Water is optically denser, so light slows down. The change in speed is what makes it bend."}],
+ g3:[{q:"After passing through the glass slab, the ray comes out…",choices:["parallel to the original ray, but shifted sideways","bent towards the normal","on exactly the same line"],ans:0,block:true,why:"It bends towards the normal going in and away by the same amount coming out."},
+     {q:"If a ray hits the slab along the normal (i = 0°), what is the angle of refraction?",ans:0,why:"Along the normal, light passes straight through without bending."}],
+ g4:[{q:"The ray makes 35° with the mirror surface. What is the angle of reflection?",ans:55,mirror:0,why:"r = i = 90° − 35° = 55°."},
+     {q:"As the ray left the glass into air, it bent…",choices:["away from the normal","towards the normal","it did not bend"],ans:0,block:true,why:"Glass to air is denser to less dense, so light speeds up and bends away from the normal."}]
+};
+// ---------- state ----------
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const LASERS=[["#ff3b5c","Red",0],["#3dff8b","Green",6],["#3fa9ff","Blue",12],["#c06bff","Purple",18],["#ffd23f","Gold",24],["rainbow","Rainbow",30]];
+let cracking=false,vq=0,vwrong=0,calcTries=0,timeStars=3;
+let stars={},laserIdx=0,cur=0,lv=null,selIdx=0,hints=0,t0=0,elapsed=0,won=false,timerOn=false,solCache={};
+try{stars=JSON.parse(localStorage.getItem("lh-stars")||"{}");laserIdx=+localStorage.getItem("lh-laser")||0}catch(e){}
+const saveS=()=>{try{localStorage.setItem("lh-stars",JSON.stringify(stars));localStorage.setItem("lh-laser",laserIdx)}catch(e){}};
+const total=()=>Object.values(stars).reduce((a,b)=>a+b,0);
+const clone=o=>JSON.parse(JSON.stringify(o));
+function movables(L){const m=[];if(L.emitter.mov)m.push({k:"emitter",i:null,name:"Laser"});
+  (L.mirrors||[]).forEach((o,i)=>o.mov&&m.push({k:"mirrors",i,name:"Mirror "+(m.filter(x=>x.k==="mirrors").length+1)}));
+  (L.blocks||[]).forEach((o,i)=>o.mov&&m.push({k:"blocks",i,name:o.label[0].toUpperCase()+o.label.slice(1)}));return m}
+const objOf=(L,m)=>m.i==null?L[m.k]:L[m.k][m.i];
+const parOf=L=>Math.max(1,movables(L).length)*(L.world==="Refraction"?30:20);
+// ---------- level list ----------
+function renderWorlds(){
+  const ws=["Reflection","Refraction"];
+  $("worlds").innerHTML=ws.map(w=>`<div class="world"><span>${w}</span>${LEVELS.map((L,i)=>L.world!==w?"":`<button class="lv" data-i="${i}" aria-current="${i===cur}" aria-label="${w} level ${LEVELS.filter(x=>x.world===w).indexOf(L)+1}${L.bonus?" (bonus)":""}, ${stars[L.id]||0} stars">${L.bonus?"B":LEVELS.filter(x=>x.world===w).indexOf(L)+1}<small>${"★".repeat(stars[L.id]||0)||"&nbsp;"}</small></button>`).join("")}</div>`).join("");
+  $("totstars").textContent=total();$("maxstars").textContent=LEVELS.length*3;
+  renderLasers();
+}
+$("worlds").onclick=e=>{const b=e.target.closest(".lv");if(b)load(+b.dataset.i)};
+function renderLasers(){const t=total();
+  if(t<LASERS[laserIdx][2])laserIdx=0;
+  $("lasers").innerHTML=LASERS.map(([c,n,need],i)=>`<button class="lsw" data-i="${i}" aria-pressed="${i===laserIdx}" ${t<need?"disabled":""} title="${n}${t<need?` (unlocks at ${need} ★)`:""}" aria-label="${n} laser${t<need?`, unlocks at ${need} stars`:""}" style="background:${c==="rainbow"?"conic-gradient(#ff3b5c,#ffd23f,#3dff8b,#3fa9ff,#c06bff,#ff3b5c)":c}">${t<need?need:""}</button>`).join("");}
+$("lasers").onclick=e=>{const b=e.target.closest(".lsw");if(!b||b.disabled)return;laserIdx=+b.dataset.i;saveS();renderLasers();draw()};
+const laserCol=()=>LASERS[laserIdx][0]==="rainbow"?"#ff3b5c":LASERS[laserIdx][0];
+
+// ---------- load ----------
+function load(i){
+  cur=i;lv=clone(LEVELS[i]);selIdx=0;hints=0;won=false;elapsed=0;t0=performance.now();timerOn=true;
+  $("win").hidden=true;$("hintmsg").textContent="";
+  const n=LEVELS.filter(x=>x.world===lv.world).indexOf(LEVELS[i])+1;
+  $("ttl").textContent=`${lv.world} ${lv.bonus?"bonus":n} · ${lv.t}`;$("hint").textContent=lv.h;
+  $("ghostlab").hidden=lv.world!=="Refraction";$("showghost").checked=false;
+  $("par").textContent=lv.calc?"3 ★ on the first shot":`3 ★ under ${parOf(lv)}s`;
+  cracking=false;vq=0;vwrong=0;calcTries=0;lv.fired=false;$("vault").hidden=true;
+  $("rulecard").innerHTML=RULES[lv.world];
+  $("calcrow").hidden=!lv.calc;$("rotrow").hidden=!!lv.calc;$("pick").hidden=!!lv.calc;$("calcmsg").textContent="";$("calcin").value="";
+  renderWorlds();renderPick();draw();
+}
+function renderPick(){const ms=movables(lv);
+  $("pick").innerHTML=ms.map((m,i)=>`<button data-i="${i}" aria-pressed="${i===selIdx}">${m.name}</button>`).join("");updAng();}
+$("pick").onclick=e=>{const b=e.target.closest("button");if(b){selIdx=+b.dataset.i;renderPick();draw()}};
+function selObj(){const m=movables(lv)[selIdx];return m?objOf(lv,m):null}
+function dispAng(m,o){let a=((o.a%360)+360)%360;if(m.k==="mirrors")a=a%180;return Math.round(a)}
+function updAng(){const m=movables(lv)[selIdx];$("ang").textContent=m?dispAng(m,objOf(lv,m))+"°":"–"}
+function turn(d){if(won||cracking)return;const m=movables(lv)[selIdx];if(!m)return;const o=objOf(lv,m);o.a=(o.a+d+360)%360;updAng();draw()}
+$("rl").onclick=()=>{const o=selObj();turn(-(o&&o.step||5))};$("rr").onclick=()=>{const o=selObj();turn(o&&o.step||5)};
+$("resetbtn").onclick=()=>{const keep=hints,e=elapsed;load(cur);hints=keep;};
+$("shownorm").onchange=draw;$("showghost").onchange=draw;
+
+// ---------- drawing ----------
+const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+function arcPath(cx,cy,r,a1,a2){ // degrees, draw shorter arc
+  let d=((a2-a1+540)%360)-180;const x1=cx+r*Math.cos(a1*RAD),y1=cy+r*Math.sin(a1*RAD),x2=cx+r*Math.cos((a1+d)*RAD),y2=cy+r*Math.sin((a1+d)*RAD);
+  return `M${x1},${y1} A${r},${r} 0 0 ${d>0?1:0} ${x2},${y2}`}
+function draw(){
+  const s=$("svg");s.innerHTML="";const L=lv;
+  const defs=el("defs",{},s);
+  defs.innerHTML=`<pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="var(--gridline)" stroke-width="1"/></pattern>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" fill="#ff7a45"/></pattern>`;
+  el("rect",{width:360,height:360,fill:"url(#grid)"},s);
+  // blocks
+  (L.blocks||[]).forEach(b=>{const P=blockPts(b);el("polygon",{points:P.map(p=>p.join(",")).join(" "),fill:b.water?"var(--water)":"var(--glass)",stroke:b.water?"#5fa8ff":"var(--glassline)","stroke-width":1.5},s);
+    el("text",{x:b.x,y:b.y+4,"text-anchor":"middle","font-size":11,fill:"#9fc9ff","font-family":"var(--f-mono)",opacity:.8},s).textContent=`${b.label} (n = ${b.n})`;});
+  // walls
+  (L.walls||[]).forEach(w=>el("line",{x1:w[0],y1:w[1],x2:w[2],y2:w[3],stroke:"url(#hatch)","stroke-width":8,"stroke-linecap":"square"},s));
+  // trace
+  const R=trace(L);const mode=(won||cracking&&false)?"full":(MODE[L.id]||"full");
+  if(L.calc&&!L.fired){R.segs=R.segs.slice(0,1);R.events=[];R.lit=new Set();}
+  if(L.calc&&!won){const m=L.mirrors[0],t=L.targets[0],e0=L.emitter;const back=e0.a+180,tau=Math.atan2(t.y-m.y,t.x-m.x)/RAD;
+    el("line",{x1:m.x,y1:m.y,x2:t.x,y2:t.y,stroke:"var(--warn)","stroke-width":1.5,"stroke-dasharray":"6 5",opacity:.8},s);
+    el("line",{x1:m.x,y1:m.y,x2:m.x+Math.cos(back*RAD)*70,y2:m.y+Math.sin(back*RAD)*70,stroke:"var(--warn)","stroke-width":1,"stroke-dasharray":"2 4",opacity:.6},s);
+    const d=((tau-back)%360+540)%360-180;el("path",{d:arcPath(m.x,m.y,30,back,tau),fill:"none",stroke:"var(--warn)","stroke-width":2},s);
+    const mid=back+d/2;el("text",{x:m.x+Math.cos(mid*RAD)*48,y:m.y+Math.sin(mid*RAD)*48+4,"text-anchor":"middle","font-size":13,"font-weight":700,fill:"var(--warn)","font-family":"var(--f-mono)"},s).textContent=Math.round(Math.abs(d))+"°";}
+  // ghost (no bend) from first refraction
+  if($("showghost").checked){const e=R.events.find(v=>v.type==="enter");if(e){const segIn=R.segs.find(sg=>Math.abs(sg[2]-e.x)<1e-6&&Math.abs(sg[3]-e.y)<1e-6);
+    if(segIn){const dx=segIn[2]-segIn[0],dy=segIn[3]-segIn[1],l=Math.hypot(dx,dy);el("line",{x1:e.x,y1:e.y,x2:e.x+dx/l*600,y2:e.y+dy/l*600,stroke:"#ffffff","stroke-width":1.5,"stroke-dasharray":"5 5",opacity:.45},s)}}}
+  // targets
+  L.targets.forEach((t,i)=>{const on=R.lit.has(i),g=el("g",{},s);
+    if(t.fish){el("ellipse",{cx:t.x,cy:t.y,rx:14,ry:8,fill:on?"var(--warn)":"#2c3a66",stroke:on?"#fff":"#6b7bb0","stroke-width":1.5,filter:on?"url(#glow)":""},g);el("polygon",{points:`${t.x+12},${t.y} ${t.x+24},${t.y-8} ${t.x+24},${t.y+8}`,fill:on?"var(--warn)":"#2c3a66",stroke:on?"#fff":"#6b7bb0"},g);el("circle",{cx:t.x-7,cy:t.y-2,r:1.8,fill:"#fff"},g);}
+    else{const r=(t.r||10)+2;el("polygon",{points:`${t.x},${t.y-r} ${t.x+r*.75},${t.y} ${t.x},${t.y+r} ${t.x-r*.75},${t.y}`,fill:on?"var(--crystal)":"#1d2a52",stroke:on?"#fff":"#5a6aa8","stroke-width":1.5,filter:on?"url(#glow)":""},g);
+      el("line",{x1:t.x-r*.75,y1:t.y,x2:t.x+r*.75,y2:t.y,stroke:on?"#fff":"#5a6aa8","stroke-width":1,opacity:.7},g);}});
+  // mirrors
+  const ms=movables(L),sel=ms[selIdx];
+  (L.mirrors||[]).forEach((m,i)=>{const[A,B]=mirrorSeg(m);
+    if(m.mov){const isSel=sel&&sel.k==="mirrors"&&sel.i===i;el("circle",{cx:m.x,cy:m.y,r:m.len/2+8,fill:"none",stroke:isSel?"var(--crystal)":"#3a4680","stroke-dasharray":"4 4","stroke-width":isSel?1.8:1.2},s);}
+    el("line",{x1:A[0],y1:A[1],x2:B[0],y2:B[1],stroke:"var(--mirror)","stroke-width":5,"stroke-linecap":"round"},s);
+    el("line",{x1:A[0],y1:A[1],x2:B[0],y2:B[1],stroke:"#ffffff","stroke-width":1.5,"stroke-linecap":"round"},s);
+    if(m.mov)el("circle",{cx:m.x,cy:m.y,r:3,fill:"#0a0f1e",stroke:"var(--mirror)"},s);
+    if(L.mirrors.length>1||VAULT[L.id]&&VAULT[L.id].some(v=>v.mirror!=null)){const off=m.len/2+14;el("text",{x:m.x+(m.y<40?off:-off*0.2),y:m.y<40?m.y+5:m.y-off+4,"text-anchor":"middle","font-size":10,fill:"var(--mirror)","font-family":"var(--f-mono)",opacity:.8},s).textContent="M"+(i+1);}});
+  // movable block ring
+  (L.blocks||[]).forEach((b,i)=>{if(b.mov){const isSel=sel&&sel.k==="blocks"&&sel.i===i,rr=Math.max(...b.pts.map(p=>Math.hypot(p[0],p[1])))+6;el("circle",{cx:b.x,cy:b.y,r:rr,fill:"none",stroke:isSel?"var(--crystal)":"#3a4680","stroke-dasharray":"4 4","stroke-width":isSel?1.8:1.2},s)}});
+  // hint ghost
+  if(L._ghost){const g=L._ghost,o=clone(objOf(L,g.m));o.a=g.a;
+    if(g.m.k==="mirrors"){const[A,B]=mirrorSeg(o);el("line",{x1:A[0],y1:A[1],x2:B[0],y2:B[1],stroke:"var(--warn)","stroke-width":3,"stroke-dasharray":"4 4"},s)}
+    else if(g.m.k==="blocks"){el("polygon",{points:blockPts(o).map(p=>p.join(",")).join(" "),fill:"none",stroke:"var(--warn)","stroke-dasharray":"4 4","stroke-width":2},s)}
+    else{el("line",{x1:o.x,y1:o.y,x2:o.x+Math.cos(o.a*RAD)*70,y2:o.y+Math.sin(o.a*RAD)*70,stroke:"var(--warn)","stroke-width":3,"stroke-dasharray":"4 4"},s)}}
+  // ray
+  const rg=el("g",{class:LASERS[laserIdx][0]==="rainbow"?"rainbow-ray":""},s);const col=laserCol();
+  R.segs.forEach(([x1,y1,x2,y2])=>{el("line",{x1,y1,x2,y2,stroke:col,"stroke-width":7,opacity:.25,"stroke-linecap":"round"},rg);el("line",{x1,y1,x2,y2,stroke:col,"stroke-width":2.4,"stroke-linecap":"round"},rg);el("line",{x1,y1,x2,y2,stroke:"#fff","stroke-width":.8,opacity:.8},rg)});
+  // normals & angles
+  const log=[];
+  R.events.forEach((e,k)=>{
+    const inA=Math.atan2(-(R.segs[k][3]-R.segs[k][1]),-(R.segs[k][2]-R.segs[k][0]))/RAD; // back along incoming
+    const nA=Math.atan2(e.ny,e.nx)/RAD, outA=Math.atan2(e.dy,e.dx)/RAD, nOut=(e.type==="enter"||e.type==="exit")?nA+180:nA;
+    const isRef=e.type==="reflect",showI=mode==="full"||(mode==="glance"&&!isRef),showR=mode==="full";
+    if($("shownorm").checked){
+      el("line",{x1:e.x-e.nx*34,y1:e.y-e.ny*34,x2:e.x+e.nx*34,y2:e.y+e.ny*34,stroke:"#ffffff","stroke-width":1,"stroke-dasharray":"3 3",opacity:.7},s);
+      if(mode==="glance"&&isRef){const mi=mirrorOf(e),mm=L.mirrors[mi];let sa=mm.a;const diff=x=>Math.abs(((x-inA)%360+540)%360-180);if(diff(sa+180)<diff(sa))sa+=180;
+        el("path",{d:arcPath(e.x,e.y,22,sa,inA),fill:"none",stroke:"var(--crystal)","stroke-width":1.5},s);
+        const m3=sa+((((inA-sa)+540)%360)-180)/2;el("text",{x:e.x+Math.cos(m3*RAD)*35,y:e.y+Math.sin(m3*RAD)*35+3,"text-anchor":"middle","font-size":10,"font-weight":700,fill:"var(--crystal)","font-family":"var(--f-mono)"},s).textContent=`${Math.round(90-e.i)}°`;}
+      if(e.i>0.5&&(showI||showR)){el("path",{d:arcPath(e.x,e.y,20,nA,inA),fill:"none",stroke:"var(--warn)","stroke-width":1.5},s);
+        const m=nA+((((inA-nA)+540)%360)-180)/2;const t=el("text",{x:e.x+Math.cos(m*RAD)*31,y:e.y+Math.sin(m*RAD)*31+3,"text-anchor":"middle","font-size":9.5,fill:"var(--warn)","font-family":"var(--f-mono)"},s);t.textContent=`i ${Math.round(e.i)}°`;
+        el("path",{d:arcPath(e.x,e.y,16,nOut,outA),fill:"none",stroke:"var(--ok)","stroke-width":1.5},s);
+        const m2=nOut+((((outA-nOut)+540)%360)-180)/2;const t2=el("text",{x:e.x+Math.cos(m2*RAD)*30,y:e.y+Math.sin(m2*RAD)*30+3,"text-anchor":"middle","font-size":9.5,fill:"var(--ok)","font-family":"var(--f-mono)"},s);t2.textContent=showR?`r ${Math.round(e.r)}°`:"r ?";}}
+    const I=Math.round(e.i),Rr=Math.round(e.r);
+    if(mode!=="full"){
+      if(isRef)log.push(mode==="glance"?`Hit Mirror ${mirrorOf(e)+1} at <b>${Math.round(90-e.i)}°</b> to its surface. <em>i = ?, r = ?</em>`:`Reflected off Mirror ${mirrorOf(e)+1}. <em>i = ?, r = ?</em>`);
+      else if(e.type==="trap")log.push(`The beam got trapped inside the ${blockName(e)}. <em>Try a smaller angle.</em>`);
+      else log.push(`${e.type==="enter"?"Entered":"Left"} the ${blockName(e)}: ${mode==="glance"?`<b>i = ${I}°</b>, `:""}<em>r = ? Which way did it bend?</em>`);
+    }
+    else if(e.type==="reflect")log.push(`Reflected off a mirror: <b>i = ${I}°</b>, <b>r = ${Rr}°</b> <em>(equal)</em>`);
+    else if(e.type==="enter")log.push(I<1?`Entered the ${L.blocks[0].label} along the normal: <em>no bending</em>`:`Entered the ${blockName(e)}: <b>i = ${I}°</b>, <b>r = ${Rr}°</b> <em>(bent towards the normal)</em>`);
+    else if(e.type==="exit")log.push(I<1?`Left along the normal: <em>no bending</em>`:`Left the ${blockName(e)}: <b>i = ${I}°</b>, <b>r = ${Rr}°</b> <em>(bent away from the normal)</em>`);
+    else log.push(`The beam got trapped inside the ${blockName(e)}. <em>Try a smaller angle.</em>`);
+  });
+  $("log").innerHTML=log.length?log.slice(0,6).map(x=>`<li>${x}</li>`).join(""):"<li><em>The beam goes straight. Nothing in its way yet.</em></li>";
+  // emitter
+  const e=L.emitter,eg=el("g",{transform:`translate(${e.x},${e.y}) rotate(${e.a})`},s);
+  if(e.mov){const isSel=sel&&sel.k==="emitter";el("circle",{cx:0,cy:0,r:26,fill:"none",stroke:isSel?"var(--crystal)":"#3a4680","stroke-dasharray":"4 4","stroke-width":isSel?1.8:1.2},eg)}
+  el("rect",{x:-16,y:-9,width:26,height:18,rx:4,fill:"#2a3563",stroke:"#8a99d6","stroke-width":1.5},eg);el("rect",{x:8,y:-4,width:8,height:8,rx:1,fill:col},eg);
+  // win check
+  // vault marker
+  if(cracking){const Q=(VAULT[L.id]||[])[vq];if(Q){let ev=null;
+    if(Q.mirror!=null)ev=R.events.find(v=>v.type==="reflect"&&mirrorOf(v)===Q.mirror);else if(Q.block)ev=R.events.find(v=>v.type!=="reflect");
+    if(ev){el("circle",{cx:ev.x,cy:ev.y,r:10,fill:"none",stroke:"var(--warn)","stroke-width":3,class:"pulse"},s);}}}
+  if(!won&&!cracking&&R.lit.size===L.targets.length)setTimeout(startVault,250);
+}
+function mirrorOf(e){let bi=0,bd=1e9;(lv.mirrors||[]).forEach((m,i)=>{const d=Math.hypot(m.x-e.x,m.y-e.y);if(d<bd){bd=d;bi=i}});return bi}
+function blockName(e){let best=null,bd=1e9;(lv.blocks||[]).forEach(b=>{const d=Math.hypot(b.x-e.x,b.y-e.y);if(d<bd){bd=d;best=b}});return best?best.label:"glass"}
+
+// ---------- dragging ----------
+let drag=null;
+function svgPt(ev){const s=$("svg"),p=s.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(s.getScreenCTM().inverse())}
+$("svg").addEventListener("pointerdown",ev=>{if(won||cracking||lv.calc)return;const p=svgPt(ev),ms=movables(lv);
+  let best=-1,bd=1e9;ms.forEach((m,i)=>{const o=objOf(lv,m);const d=Math.hypot(o.x-p.x,o.y-p.y);const reach=m.k==="mirrors"?o.len/2+20:m.k==="blocks"?90:40;if(d<reach&&d<bd){bd=d;best=i}});
+  if(best<0&&ms.length)best=selIdx; if(best<0)return;
+  selIdx=best;renderPick();const o=objOf(lv,ms[best]);
+  drag={o,a0:o.a,th0:Math.atan2(p.y-o.y,p.x-o.x)/RAD,step:o.step||5};$("svg").setPointerCapture(ev.pointerId);draw();});
+$("svg").addEventListener("pointermove",ev=>{if(!drag)return;const p=svgPt(ev),o=drag.o;const th=Math.atan2(p.y-o.y,p.x-o.x)/RAD;
+  let a=drag.a0+(th-drag.th0);a=Math.round(a/drag.step)*drag.step;a=(a%360+360)%360;if(a!==o.a){o.a=a;updAng();draw()}});
+const endDrag=()=>{drag=null};$("svg").addEventListener("pointerup",endDrag);$("svg").addEventListener("pointercancel",endDrag);
+
+// ---------- timer, hints, win ----------
+setInterval(()=>{if(!timerOn||document.hidden||!$("help").hidden||$("heist").hidden)return;const now=performance.now();elapsed+=(now-t0)/1000;t0=now;$("clock").textContent=Math.floor(elapsed)+"s"},250);
+setInterval(()=>{t0=performance.now()},0); // keep t0 fresh between ticks
+function solve(L){if(solCache[L.id])return solCache[L.id];const ms=movables(L);let found=null;
+  const ranges=ms.map(m=>{const o=objOf(L,m),st=o.step||5,max=m.k==="mirrors"?180:360,r=[];for(let a=0;a<max;a+=st)r.push(a);return r});
+  const c=clone(L);(function rec(j,v){if(found)return;if(j===ms.length){ms.forEach((m,q)=>objOf(c,m).a=v[q]);if(trace(c).lit.size===c.targets.length)found=v.slice();return}for(const a of ranges[j]){v.push(a);rec(j+1,v);v.pop()}})(0,[]);
+  return solCache[L.id]=found;}
+$("hintbtn").onclick=()=>{if(won||cracking)return;
+  if(lv.calc){hints++;$("hintmsg").textContent=`Hint: the yellow angle is between the incoming ray and the line to the crystal. That angle = i + r = 2i. Max ${Math.max(1,3-hints)} ★ now.`;return;}const L=LEVELS[cur],sol=solve(L),ms=movables(lv);if(!sol)return;
+  // pick the first object not at its solution angle
+  let k=ms.findIndex((m,q)=>{const a=objOf(lv,m).a,t=sol[q];return m.k==="mirrors"?((a-t)%180+180)%180!==0:a!==t});if(k<0)k=0;
+  hints++;lv._ghost={m:ms[k],a:sol[k]};selIdx=k;renderPick();
+  $("hintmsg").textContent=`Hint ${hints}: turn ${ms[k].name} to ${ms[k].k==="mirrors"?sol[k]%180:sol[k]}° (yellow outline). Max ${Math.max(1,3-hints)} ★ now.`;draw();};
+function startVault(){if(won||cracking)return;const R=trace(lv);if(R.lit.size!==lv.targets.length||(lv.calc&&!lv.fired))return;
+  timerOn=false;const par=parOf(lv);timeStars=lv.calc?Math.max(1,3-(calcTries-1)):elapsed<=par?3:elapsed<=par*2?2:1;
+  const V=VAULT[lv.id];if(!V||!V.length)return winLevel();cracking=true;vq=0;renderVault();draw();}
+function vAnswer(Q){if(Q.dyn){const ev=trace(lv).events.find(v=>v.type==="reflect"&&mirrorOf(v)===Q.mirror);return ev?Math.round(ev.i):0}return Q.ans}
+function renderVault(){const V=VAULT[lv.id],Q=V[vq],box=$("vault");box.hidden=false;
+  box.innerHTML=`<h3>Crystals lit! Crack the vault code ${V.length>1?`(${vq+1}/${V.length})`:""}</h3><p class="vq">${Q.q}</p>`+
+   (Q.choices?`<div class="vchoices">${Q.choices.map((c,j)=>`<button data-j="${j}">${"ABC"[j]}. ${c}</button>`).join("")}</div>`
+    :`<div class="row"><input class="numin" id="vin" inputmode="decimal" autocomplete="off" aria-label="Your answer"><span>°</span><button class="go sm" id="vgo">Enter code</button></div>`)+`<div class="vfb" id="vfb"></div>`;
+  if(Q.choices)box.querySelector(".vchoices").onclick=e=>{const b=e.target.closest("button");if(b&&!b.disabled)vCheck(+b.dataset.j===Q.ans,b)};
+  else{const go=()=>{const v=parseFloat(($("vin").value||"").replace(",","."));if(isNaN(v)){$("vfb").textContent="Type a number first.";$("vfb").className="vfb no";return}vCheck(Math.abs(v-vAnswer(Q))<=1)};
+    $("vgo").onclick=go;$("vin").onkeydown=e=>{if(e.key==="Enter")go()};}
+  box.scrollIntoView({block:"nearest",behavior:"smooth"});(box.querySelector("input")||box.querySelector("button")).focus({preventScroll:true});}
+function vCheck(ok,btn){const V=VAULT[lv.id],Q=V[vq],fb=$("vfb");
+  if(ok){if(btn)btn.classList.add("right");$("vault").querySelectorAll("button,input").forEach(x=>x.disabled=true);fb.className="vfb ok";fb.textContent="Code accepted! "+Q.why;
+    setTimeout(()=>{vq++;if(vq<V.length){renderVault();draw()}else{cracking=false;$("vault").hidden=true;winLevel()}},2200);}
+  else{vwrong++;if(btn){btn.classList.add("wrong");btn.disabled=true}fb.className="vfb no";fb.textContent=`Wrong code! −1 ★. Try again.${Q.mirror!=null||Q.block?" Look at the flashing spot on the board.":""}`;}}
+$("firebtn").onclick=fire;$("calcin").onkeydown=e=>{if(e.key==="Enter")fire()};
+function fire(){if(won||cracking)return;const v=parseFloat(($("calcin").value||"").replace(",","."));const msg=$("calcmsg");
+  if(isNaN(v)||v<0||v>=90){msg.className="calcmsg no";msg.textContent="Type an angle between 0° and 90°.";return}
+  calcTries++;const e0=lv.emitter,m=lv.mirrors[0],t=lv.targets[0],back=e0.a+180,tau=Math.atan2(t.y-m.y,t.x-m.x)/RAD;const d=((tau-back)%360+540)%360-180;
+  const out=back+Math.sign(d)*2*v;m.a=((out+e0.a)/2%360+360)%360;lv.fired=true;draw();
+  if(trace(lv).lit.size===lv.targets.length){msg.className="calcmsg ok";msg.textContent=`Direct hit! The angle between the rays is 2 × i, so i = ${Math.round(Math.abs(d))}° ÷ 2 = ${Math.round(Math.abs(d)/2)}°.`;}
+  else{msg.className="calcmsg no";msg.textContent=`Missed! With i = ${v}°, the rays are ${Math.round(2*v)}° apart, not ${Math.round(Math.abs(d))}°. Try again.`;}}
+function winLevel(){if(won)return;const R=trace(lv);if(R.lit.size!==lv.targets.length)return;won=true;timerOn=false;cracking=false;
+  let st=Math.max(1,Math.min(timeStars,3-hints)-vwrong);
+  const before=total(),prev=stars[lv.id]||0;if(st>prev)stars[lv.id]=st;saveS();
+  const newly=LASERS.filter(l=>l[2]>before&&l[2]<=total());
+  const next=cur<LEVELS.length-1;
+  $("win").hidden=false;$("win").innerHTML=`<div class="winbox"><img class="adlogo xs" src="${AD_LOGO}" alt="Achievers Dream"><h3>Vault cracked!</h3><div class="bigstars">${[1,2,3].map(n=>`<span class="${n<=st?"star":"off"}">★</span>`).join("")}</div>
+    <div>${lv.calc?`${calcTries} shot${calcTries>1?"s":""}`:`${Math.floor(elapsed)}s · par ${parOf(lv)}s`}${hints?` · ${hints} hint${hints>1?"s":""}`:""}${VAULT[lv.id]?` · ${vwrong?vwrong+" wrong code"+(vwrong>1?"s":""):"vault code perfect"}`:""}</div>
+    ${newly.length?`<div class="unlock">New laser unlocked: ${newly.map(l=>l[1]).join(", ")}!</div>`:""}
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${next?`<button class="go" id="nextbtn">Next heist →</button>`:`<span>You've cracked every vault! Try Quick Fire.</span>`}<button class="ghostbtn" id="againbtn">Replay</button></div></div>`;
+  if(next)$("nextbtn").onclick=()=>load(cur+1);$("againbtn").onclick=()=>load(cur);
+  renderWorlds();(next?$("nextbtn"):$("againbtn")).focus();}
+
+// ---------- Quick Fire ----------
+let qf=null;
+const QN=10,QT=10; // QT = seconds over which the speed bonus drains; no time limit
+const QRANKS=[[0,"Light Learner"],[1500,"Spark"],[3000,"Torch Bearer"],[5000,"Laser Cadet"],[7000,"Beam Bender"],[9000,"Prism Master"],[10500,"Speed of Light"]];
+const QMSG={"Light Learner":"Every right answer counts. Read the rule after each question, then try again!","Spark":"You're getting the hang of it. Keep going!","Torch Bearer":"Solid work. A few more right answers will push you up.","Laser Cadet":"Nice! You know your rays. Try to answer a bit faster.","Beam Bender":"Great job! You're quick and accurate.","Prism Master":"Excellent! Almost at the top.","Speed of Light":"Top rank! Fast and accurate."};
+const streakMult=c=>1+0.1*Math.min(Math.max(c-1,0),5);
+const qrank=sc=>QRANKS.filter(r=>sc>=r[0]).pop();
+const rankRows=sc=>QRANKS.map(r=>`<tr class="${qrank(sc)===r?"me":""}"><td>${r[1]}${qrank(sc)===r?" ← you":""}</td><td>${r[0].toLocaleString("en")}+</td></tr>`).join("");
+function qfIntro(){const best=qfBest();
+  $("qfview").innerHTML=`<div class="center"><h2>Quick Fire</h2><p>10 questions on reflection, refraction and seeing round walls with mirrors.</p><p class="sub">There's no time limit, but faster answers earn a bigger speed bonus. Get answers right in a row for a streak bonus (up to +50%). Wrong answers just reset the streak; you never lose points. Your total score gives you a rank.</p>${best?`<p>Your best: <b>${best.toLocaleString("en")}</b> (${qrank(best)[1]})</p>`:""}<table class="ranks"><tbody>${rankRows(best||-1)}</tbody></table><button class="go" id="qfstart">Start</button></div>`;
+  $("qfstart").onclick=qfStart;}
+let memBest=0;
+function qfBest(){let v=0;try{v=+localStorage.getItem("lh-best")||0}catch(e){}return Math.max(v,memBest)}
+function qfStart(){qf={n:0,score:0,combo:0,right:0,time:0,round:pickRound()};qfNext();}
+function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function shuffle(a){for(let j=a.length-1;j>0;j--){const q=rnd(0,j);[a[j],a[q]]=[a[q],a[j]]}return a}
+const QCOL=["#ff6b9a","#ffc04d","#57e39a"],QL=["A","B","C"];
+const svgOpen=(h=240)=>`<svg viewBox="0 0 360 ${h}" aria-label="Question diagram"><defs><pattern id="qh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="8" fill="#3a4680"/></pattern></defs>`;
+const tx=(x,y,t,c="#97a3cb",sz=12,extra="")=>`<text x="${x}" y="${y}" fill="${c}" font-size="${sz}" font-family="var(--f-mono)" ${extra}>${t}</text>`;
+const arrowHead=(x1,y1,x2,y2,c)=>{const mx=(x1+x2)/2,my=(y1+y2)/2;return `<polygon points="0,-6 10,0 0,6" fill="${c}" transform="translate(${mx},${my}) rotate(${Math.atan2(y2-y1,x2-x1)/RAD})"/>`};
+const ray=(x1,y1,x2,y2,c,w=3,dash="")=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" ${dash?`stroke-dasharray="${dash}"`:""}/>`;
+function arcLbl(cx,cy,r,a1,a2,label,c){const d=((a2-a1+540)%360)-180,m=a1+d/2;
+  return `<path d="${arcPath(cx,cy,r,a1,a2)}" fill="none" stroke="${c}" stroke-width="2"/>`+tx(cx+Math.cos(m*RAD)*(r+15),cy+Math.sin(m*RAD)*(r+15)+4,label,c,13,'text-anchor="middle" font-weight="700"')}
+const mirrorH=(cy)=>`<rect x="20" y="${cy}" width="320" height="8" fill="#d4defc"/><rect x="20" y="${cy+8}" width="320" height="26" fill="url(#qh)"/>`;
+const normalV=(cx,y1,y2)=>ray(cx,y1,cx,y2,"#fff",1,"4 4").replace("/>",' opacity=".6"/>')+tx(cx+4,y1+12,"normal","#fff",11,'opacity=".7"');
+
+// ---- 1. Which way does the light go? (ray diagrams) ----
+function pathQ(k,i){
+  const n=k==="water"?1.33:1.5,sn=x=>Math.asin(x)/RAD;let correct,wrongs,why,top="air",bottom=k==="water"?"water":"glass",surface="boundary";
+  if(k==="reflect"){surface="mirror";correct={side:"same",ang:i};wrongs=[{side:"through",ang:i},{side:"same",ang:Math.min(80,i+25)}];why="Reflection: angle of incidence = angle of reflection.";}
+  else if(k==="glass"||k==="water"){const r=sn(Math.sin(i*RAD)/n);correct={side:"through",ang:r};wrongs=[{side:"through",ang:i},{side:"through",ang:Math.min(80,i+18)}];why=`Into a denser medium (${bottom}), light slows down and bends towards the normal.`;}
+  else if(k==="exit"){top="glass";bottom="air";const r=sn(Math.sin(i*RAD)*1.5);correct={side:"through",ang:r};wrongs=[{side:"through",ang:i},{side:"through",ang:Math.max(3,i-16)}];why="Into a less dense medium (air), light speeds up and bends away from the normal.";}
+  else{bottom=k==="normalw"?"water":"glass";correct={side:"through",ang:0};wrongs=[{side:"through",ang:25},{side:"through",ang:-25}];why="Light travelling along the normal goes straight through without bending.";}
+  const opts=shuffle([correct,...wrongs].map((o,j)=>({...o,ok:j===0})));
+  const cx=180,cy=120,L=105;let h=svgOpen();
+  if(surface==="mirror")h+=mirrorH(cy);
+  else{const fill=b=>b==="air"?"none":b==="water"?"rgba(60,140,255,.26)":"rgba(140,205,255,.16)";h+=`<rect x="0" y="0" width="360" height="${cy}" fill="${fill(top)}"/><rect x="0" y="${cy}" width="360" height="${240-cy}" fill="${fill(bottom)}"/><line x1="0" y1="${cy}" x2="360" y2="${cy}" stroke="#8fcbff" stroke-width="2"/>`+tx(10,20,top)+tx(10,232,bottom);}
+  h+=normalV(cx,10,230);
+  const ia=i*RAD,sx=cx-Math.sin(ia)*L,sy=cy-Math.cos(ia)*L,col=laserCol();
+  h+=ray(sx,sy,cx,cy,col)+arrowHead(sx,sy,cx,cy,col);
+  if(i>0){const ha=i/2*RAD;h+=tx(cx-Math.sin(ha)*52,cy-Math.cos(ha)*52,i+"°","var(--warn)",12,'text-anchor="middle"')}
+  opts.forEach((o,j)=>{const a=o.ang*RAD,LL=o.side==="same"?L:100;const ex=cx+Math.sin(a)*LL,ey=o.side==="same"?cy-Math.cos(a)*LL:cy+Math.cos(a)*LL;
+    h+=ray(cx,cy,ex,ey,QCOL[j],2.5,"7 4")+`<circle cx="${ex}" cy="${ey}" r="11" fill="#0a0f1e" stroke="${QCOL[j]}" stroke-width="2"/>`+tx(ex,ey+5,QL[j],QCOL[j],14,'text-anchor="middle" font-weight="700" font-family="var(--f-display)"')});
+  return{prompt:"Which way does the light go?",svg:h+"</svg>",opts:opts.map(o=>({ok:o.ok})),letters:true,why};}
+
+// ---- 2. Identify the angle (labelled diagram) ----
+function identifyQ(i,ask){
+  const cx=180,cy=150,L=120,col=laserCol();
+  const sx=cx-Math.sin(i*RAD)*L,sy=cy-Math.cos(i*RAD)*L,ex=cx+Math.sin(i*RAD)*L,ey=sy;
+  const inA=Math.atan2(sy-cy,sx-cx)/RAD,outA=Math.atan2(ey-cy,ex-cx)/RAD;
+  const cands={incN:[-90,inA,"between the incident ray and the normal"],refN:[-90,outA,"between the reflected ray and the normal"],incM:[180,inA,"between the incident ray and the mirror"],refM:[0,outA,"between the reflected ray and the mirror"]};
+  const correctKey=ask==="incidence"?"incN":"refN";const others=shuffle(Object.keys(cands).filter(k=>k!==correctKey)).slice(0,2);
+  const keys=shuffle([correctKey,...others]);
+  let h=svgOpen()+mirrorH(cy)+normalV(cx,15,cy)+ray(sx,sy,cx,cy,col)+arrowHead(sx,sy,cx,cy,col)+ray(cx,cy,ex,ey,col)+arrowHead(cx,cy,ex,ey,col);
+  h+=tx(sx-10,sy-6,"incident ray","#97a3cb",11,'text-anchor="middle"')+tx(ex+10,ey-6,"reflected ray","#97a3cb",11,'text-anchor="middle"')+tx(300,cy-8,"mirror","#97a3cb",11);
+  keys.forEach((k,j)=>{const[a1,a2]=cands[k];h+=arcLbl(cx,cy,k.endsWith("N")?50:28,a1,a2,QL[j],QCOL[j])});
+  return{prompt:`Which angle is the angle of ${ask}?`,svg:h+"</svg>",opts:keys.map(k=>({ok:k===correctKey})),letters:true,
+    why:`The angle of ${ask} is the angle ${cands[correctKey][2]}. Angles are always measured from the normal, not the mirror.`};}
+
+// ---- 3. Angle to the surface -> i or r ----
+function surfaceQ(g,ask){
+  const cx=180,cy=150,L=120,i=90-g,col=laserCol();const sx=cx-Math.sin(i*RAD)*L,sy=cy-Math.cos(i*RAD)*L;
+  let h=svgOpen()+mirrorH(cy)+normalV(cx,15,cy)+ray(sx,sy,cx,cy,col)+arrowHead(sx,sy,cx,cy,col)+arcLbl(cx,cy,40,180,Math.atan2(sy-cy,sx-cx)/RAD,g+"°","var(--warn)");
+  const opts=shuffle([{t:i+"°",ok:true},{t:g+"°",ok:false},{t:(2*g===i?2*i:2*g)+"°",ok:false}]);
+  return{prompt:`The ray makes ${g}° with the mirror surface. What is the angle of ${ask}?`,svg:h+"</svg>",opts:opts.map(o=>({t:o.t,ok:o.ok})),
+    why:`The normal is at 90° to the mirror, so i = 90° − ${g}° = ${i}°${ask==="reflection"?`, and r = i = ${i}°`:""}.`};}
+
+// ---- 4. Angle between the rays ----
+function betweenQ(v,mode){
+  const cx=180,cy=150,L=120,col=laserCol();const i=mode==="toI"?v/2:v;const sx=cx-Math.sin(i*RAD)*L,sy=cy-Math.cos(i*RAD)*L,ex=cx+Math.sin(i*RAD)*L;
+  let h=svgOpen()+mirrorH(cy)+normalV(cx,15,cy)+ray(sx,sy,cx,cy,col)+arrowHead(sx,sy,cx,cy,col)+ray(cx,cy,ex,sy,col)+arrowHead(cx,cy,ex,sy,col);
+  if(mode==="toI"){h+=arcLbl(cx,cy,46,Math.atan2(sy-cy,sx-cx)/RAD,Math.atan2(sy-cy,ex-cx)/RAD,v+"°","var(--warn)");
+    const opts=shuffle([{t:v/2+"°",ok:true},{t:v+"°",ok:false},{t:((90-v/2)===v?v/2+20:90-v/2)+"°",ok:false}]);
+    return{prompt:`The angle between the incident ray and the reflected ray is ${v}°. What is the angle of incidence?`,svg:h+"</svg>",opts,why:`The angle between the rays is i + r = 2i, so i = ${v}° ÷ 2 = ${v/2}°.`};}
+  h+=arcLbl(cx,cy,40,-90,Math.atan2(sy-cy,sx-cx)/RAD,v+"°","var(--warn)");
+  const opts=shuffle([{t:2*v+"°",ok:true},{t:v+"°",ok:false},{t:(180-2*v)+"°",ok:false}]);
+  return{prompt:`The angle of incidence is ${v}°. What is the angle between the incident ray and the reflected ray?`,svg:h+"</svg>",opts,why:`i = r = ${v}°, so the rays are ${v}° + ${v}° = ${2*v}° apart.`};}
+
+// ---- 5. Can she see the cat? (mirror scenario) ----
+function sceneGeom(M,off){const E={x:62,y:132},C={x:300,y:212};
+  const toC=Math.atan2(C.y-M.y,C.x-M.x)/RAD,toE=Math.atan2(E.y-M.y,E.x-M.x)/RAD;let bis=(toC+toE)/2;if(Math.abs(toC-toE)>180)bis+=180;
+  const a=bis+90+off;// mirror surface angle; normal = bisector when off = 0
+  // trace from cat to mirror, reflect, test eye distance
+  let dx=M.x-C.x,dy=M.y-C.y,l=Math.hypot(dx,dy);dx/=l;dy/=l;let nx=Math.cos((a+90)*RAD),ny=Math.sin((a+90)*RAD);const dot=dx*nx+dy*ny;const rx=dx-2*dot*nx,ry=dy-2*dot*ny;
+  const t=(E.x-M.x)*rx+(E.y-M.y)*ry,px=M.x+rx*t,py=M.y+ry*t,dist=t>0?Math.hypot(px-E.x,py-E.y):999;
+  return{E,C,a,rx,ry,ok:dist<14};}
+function sceneSvg(M,mirrors,showRay){
+  const g=sceneGeom(M,0);let h=svgOpen(250).replace('viewBox="0 0 360 250"','viewBox="0 -34 360 284"');
+  h+=`<rect x="0" y="230" width="360" height="20" fill="#1d2747"/><rect x="160" y="84" width="22" height="146" fill="url(#qh)" stroke="#ff7a45" stroke-width="2"/>`+tx(171,78,"wall","#ff7a45",11,'text-anchor="middle"');
+  // girl
+  h+=`<circle cx="${g.E.x-8}" cy="${g.E.y}" r="14" fill="#2a3563" stroke="#8a99d6" stroke-width="2"/><circle cx="${g.E.x}" cy="${g.E.y-2}" r="2.6" fill="#fff"/><line x1="${g.E.x-8}" y1="${g.E.y+14}" x2="${g.E.x-8}" y2="230" stroke="#8a99d6" stroke-width="4"/>`+tx(g.E.x-8,248,"girl","#97a3cb",11,'text-anchor="middle"');
+  // cat
+  h+=`<ellipse cx="${g.C.x}" cy="${g.C.y+6}" rx="18" ry="11" fill="#ffc04d"/><circle cx="${g.C.x-16}" cy="${g.C.y-4}" r="8" fill="#ffc04d"/><polygon points="${g.C.x-22},${g.C.y-9} ${g.C.x-20},${g.C.y-17} ${g.C.x-15},${g.C.y-11}" fill="#ffc04d"/><polygon points="${g.C.x-14},${g.C.y-11} ${g.C.x-10},${g.C.y-17} ${g.C.x-9},${g.C.y-8}" fill="#ffc04d"/>`+tx(g.C.x,248,"cat","#97a3cb",11,'text-anchor="middle"');
+  mirrors.forEach(([a,c,lab])=>{const dx=Math.cos(a*RAD)*(lab?30:24),dy=Math.sin(a*RAD)*(lab?30:24);h+=`<line x1="${M.x-dx}" y1="${M.y-dy}" x2="${M.x+dx}" y2="${M.y+dy}" stroke="${c}" stroke-width="5" stroke-linecap="round"/>`;
+    if(lab)h+=`<circle cx="${M.x+dx*1.5}" cy="${M.y+dy*1.5}" r="10" fill="#0a0f1e" stroke="${c}" stroke-width="2"/>`+tx(M.x+dx*1.5,M.y+dy*1.5+4,lab,c,12,'text-anchor="middle" font-weight="700"');});
+  h+=`<circle cx="${M.x}" cy="${M.y}" r="3" fill="#d4defc"/>`;
+  if(showRay)h+=ray(g.C.x-8,g.C.y-4,M.x,M.y,laserCol(),2,"6 4");
+  return h+"</svg>";}
+const SPOTS=[{x:205,y:38},{x:240,y:30},{x:190,y:46},{x:225,y:44}];
+function seeQ(si,off){const M=SPOTS[si],g=sceneGeom(M,off);
+  const opts=[{t:"Yes",ok:g.ok},{t:"No",ok:!g.ok}];
+  return{prompt:"Light from the cat travels to the mirror (dashed line). Can the girl see the cat in the mirror?",svg:sceneSvg(M,[[g.a,"#d4defc"]],true),opts,
+    why:g.ok?"Yes: the mirror is angled so the normal splits the angle between the cat and the girl, so i = r and the light reflects into her eye.":"No: for her to see the cat, the reflected ray must reach her eye. This mirror is at the wrong angle, so i = r sends the light somewhere else."};}
+function pickMirrorQ(si){const M=SPOTS[si];const offs=shuffle([0,45,-45]);
+  return{prompt:"Which mirror angle lets the girl see the cat over the wall?",svg:sceneSvg(M,offs.map((o,j)=>[sceneGeom(M,o).a,QCOL[j],QL[j]]),true),opts:offs.map(o=>({ok:o===0})),letters:true,
+    why:"The correct mirror makes the angle of incidence equal the angle of reflection, so light from the cat bounces straight into her eye. Its normal splits the angle between the cat and the girl."};}
+
+// ---- 6. Concept questions ----
+const CONCEPTS=[
+ ["Angles of incidence and reflection are measured from…",["the normal","the mirror surface","the ground"],"Both angles are measured from the normal, the line at 90° to the surface."],
+ ["If the angle of incidence is 0°, the angle of reflection is…",["0°","90°","180°"],"A ray along the normal reflects straight back: i = r = 0°."],
+ ["The normal is a line drawn…",["at 90° to the surface","along the surface","at 45° to the surface"],"The normal is always perpendicular (90°) to the surface where the ray hits."],
+ ["A periscope uses two plane mirrors that are…",["parallel, each at 45°","at right angles to each other","both horizontal"],"Two parallel mirrors at 45° turn the light through 90° and then back again."],
+ ["Light travels from air into glass. It bends…",["towards the normal","away from the normal","it does not bend"],"Glass is optically denser, so light slows down and bends towards the normal."],
+ ["Light travels from water into air. It bends…",["away from the normal","towards the normal","it does not bend"],"Air is less dense, so light speeds up and bends away from the normal."],
+ ["Light bends when it enters glass because…",["its speed changes","it gets brighter","the glass is a mirror"],"Refraction happens because light changes speed in a different medium."],
+ ["Compared with air, light in glass travels…",["slower","faster","at the same speed"],"Glass is optically denser, so light slows down."],
+ ["Light goes from air into glass with i = 40°. The angle of refraction is…",["less than 40°","more than 40°","exactly 40°"],"Bending towards the normal makes r smaller than i."],
+ ["Light goes from glass into air with i = 25°. The angle of refraction is…",["more than 25°","less than 25°","exactly 25°"],"Bending away from the normal makes r bigger than i."],
+ ["A ray enters a glass block along the normal. Inside the glass it…",["goes straight on","bends towards the normal","bends away from the normal"],"Along the normal (i = 0°) there is no bending, only a change in speed."],
+ ["A pool looks shallower than it really is because light…",["bends away from the normal leaving the water","reflects off the bottom","speeds up in water"],"Light from the bottom bends away from the normal at the surface, so the bottom appears higher."],
+ ["A ray passes through a parallel-sided glass block. It comes out…",["parallel to the original ray","at 90° to the original ray","reflected back"],"It bends towards the normal going in and away by the same amount coming out, so it leaves parallel, shifted sideways."],
+ ["Which of these is optically densest?",["glass","water","air"],"Glass slows light the most of these three, so it bends light the most."],
+ ["A ray hits a mirror with i = 35°. The angle of reflection is…",["35°","55°","70°"],"Law of reflection: angle of reflection = angle of incidence."],
+ ["To see something round a corner with ONE mirror, you need the mirror's normal to…",["split the angle between the object and your eye","point at the object","point at your eye"],"Then i = r, so light from the object reflects into your eye."]
+];
+function conceptQ(n){const [q,ch,why]=CONCEPTS[n];const opts=shuffle(ch.map((t,j)=>({t,ok:j===0})));return{prompt:q,svg:"",opts,why}}
+
+// ---- the bank ----
+const QBANK=[];
+[20,30,40,50,60].forEach(i=>QBANK.push({key:"p-ref-"+i,cat:"path",make:()=>pathQ("reflect",i)}));
+[25,35,45,55].forEach(i=>QBANK.push({key:"p-gl-"+i,cat:"path",make:()=>pathQ("glass",i)}));
+[30,40,50].forEach(i=>QBANK.push({key:"p-wa-"+i,cat:"path",make:()=>pathQ("water",i)}));
+[15,20,25,30].forEach(i=>QBANK.push({key:"p-ex-"+i,cat:"path",make:()=>pathQ("exit",i)}));
+["normal","normalw"].forEach(k=>QBANK.push({key:"p-"+k,cat:"path",make:()=>pathQ(k,0)}));
+[30,40,50,60].forEach(i=>["incidence","reflection"].forEach(a=>QBANK.push({key:`id-${a}-${i}`,cat:"identify",make:()=>identifyQ(i,a)})));
+[20,25,35,40,55,65,70].forEach(g=>["incidence","reflection"].forEach(a=>QBANK.push({key:`sf-${a}-${g}`,cat:"calc",make:()=>surfaceQ(g,a)})));
+[60,80,100,120,140].forEach(v=>QBANK.push({key:"bt-i-"+v,cat:"calc",make:()=>betweenQ(v,"toI")}));
+[25,35,50,65].forEach(v=>QBANK.push({key:"bt-r-"+v,cat:"calc",make:()=>betweenQ(v,"toRays")}));
+SPOTS.forEach((_,s)=>[0,25,-25].forEach(o=>QBANK.push({key:`see-${s}-${o}`,cat:"scene",make:()=>seeQ(s,o)})));
+SPOTS.forEach((_,s)=>QBANK.push({key:"pick-"+s,cat:"scene",make:()=>pickMirrorQ(s)}));
+CONCEPTS.forEach((_,n)=>QBANK.push({key:"c-"+n,cat:"concept",make:()=>conceptQ(n)}));
+
+function loadSeen(){try{return new Set(JSON.parse(localStorage.getItem("lh-seenq")||"[]"))}catch(e){return memSeen}}
+let memSeen=new Set();
+function saveSeen(s){memSeen=s;try{localStorage.setItem("lh-seenq",JSON.stringify([...s]))}catch(e){}}
+function pickRound(){let seen=loadSeen();let pool=QBANK.filter(q=>!seen.has(q.key));
+  if(pool.length<QN){seen=new Set();pool=QBANK.slice();}
+  // spread across categories: round-robin through shuffled categories
+  const cats={};shuffle(pool).forEach(q=>(cats[q.cat]=cats[q.cat]||[]).push(q));const order=shuffle(Object.keys(cats));const out=[];
+  while(out.length<QN){let added=false;for(const c of order){if(cats[c].length&&out.length<QN){out.push(cats[c].pop());added=true}}if(!added)break;}
+  out.forEach(q=>seen.add(q.key));saveSeen(seen);return shuffle(out);}
+
+let qTimer=null,qLeft=0,qUsed=0,qLock=false;
+function qfNext(){if(qf.n>=QN)return qfEnd();const q=qf.round[qf.n].make();qf.q=q;qf.n++;qLock=false;
+  const btns=q.letters?q.opts.map((o,j)=>`<button class="ans ${QL[j].toLowerCase()}" data-j="${j}">${QL[j]}</button>`).join("")
+    :q.opts.map((o,j)=>`<button class="ans txt" data-j="${j}">${o.t}</button>`).join("");
+  $("qfview").innerHTML=`<div class="qf"><div class="qfhead"><span>Question ${qf.n}/${QN}</span><span class="combo" id="combo">${qf.combo>1?`Streak +${Math.round((streakMult(qf.combo)-1)*100)}%`:""}</span><span>Score <b id="qscore">${qf.score}</b></span></div>${qfBest()?`<div class="qbest">Personal best: ${qfBest().toLocaleString("en")} (${qrank(qfBest())[1]})</div>`:""}
+    <div class="qbarrow"><span>Speed bonus</span><div class="qbar"><i id="qbar"></i></div><span id="qclock">0.0s</span></div><p class="qq">${q.prompt}</p>${q.svg?`<div class="qsvg">${q.svg}</div>`:""}
+    <div class="answers ${q.letters?"":(q.opts.length===2?"two":"stack")}">${btns}</div><div class="why" id="why"></div><div id="nextrow"></div></div>`;
+  qLeft=QT;qUsed=0;clearInterval(qTimer);qTimer=setInterval(()=>{if($("qfview").hidden||!$("help").hidden)return;qLeft-=0.1;qUsed+=0.1;$("qbar").style.width=Math.max(0,qLeft/QT*100)+"%";$("qclock").textContent=qUsed.toFixed(1)+"s"},100);
+  $("qfview").querySelector(".answers").onclick=e=>{const b=e.target.closest(".ans");if(b)qfAnswer(+b.dataset.j)};}
+function qfAnswer(j){if(qLock)return;qLock=true;clearInterval(qTimer);qf.time+=qUsed;const q=qf.q,ok=q.opts[j].ok,ci=q.opts.findIndex(o=>o.ok);
+  const bs=$("qfview").querySelectorAll(".ans");bs.forEach(b=>b.disabled=true);bs[ci].classList.add("right");if(!ok)bs[j].classList.add("wrong");
+  const name=q.letters?QL[ci]:`"${q.opts[ci].t}"`;
+  if(ok){qf.combo++;qf.right++;const sp=Math.round(500*Math.max(0,qLeft)/QT),pts=Math.round((500+sp)*streakMult(qf.combo));qf.score+=pts;$("qscore").textContent=qf.score;
+    $("why").className="why ok";$("why").textContent=`+${pts} (${qUsed.toFixed(1)}s${qf.combo>1?`, streak +${Math.round((streakMult(qf.combo)-1)*100)}%`:""})! ${q.why}`;$("combo").textContent=qf.combo>1?`Streak +${Math.round((streakMult(qf.combo)-1)*100)}%`:"";}
+  else{qf.combo=0;$("why").className="why no";$("why").textContent=`Not quite. The answer is ${name}. ${q.why}`;$("combo").textContent="";}
+  $("nextrow").innerHTML=`<button class="go" id="qnext">${qf.n>=QN?"See my rank →":"Next question →"}</button>`;$("qnext").onclick=qfNext;$("qnext").focus({preventScroll:true});}
+
+function qfEnd(){const best=qfBest();memBest=Math.max(best,qf.score);try{if(qf.score>best)localStorage.setItem("lh-best",qf.score)}catch(e){}
+  const rk=qrank(qf.score),nx=QRANKS.find(r=>r[0]>qf.score),nb=Math.max(best,qf.score),brk=qrank(nb);
+  $("qfview").innerHTML=`<div class="center"><img class="adlogo sm" src="${AD_LOGO}" alt="Achievers Dream"><h2>${qf.score>best?"New best!":"Round over"}</h2><div class="score">${qf.score.toLocaleString("en")}</div>
+    <div class="rankname">${rk[1]}</div><p>${QMSG[rk[1]]}</p>
+    <div class="bestbox"><span>Personal best</span><b>${nb.toLocaleString("en")}</b><span class="bestrank">${brk[1]}</span></div>
+    <p>${qf.right}/${QN} correct · average ${(qf.time/QN).toFixed(1)}s per question</p>
+    <p class="sub">${nx?`${(nx[0]-qf.score).toLocaleString("en")} more points to reach <b>${nx[1]}</b>.`:"You reached the top rank!"}</p>
+    <table class="ranks"><tbody>${rankRows(qf.score)}</tbody></table>
+    <button class="go" id="qfagain">Play again</button></div>`;
+  $("qfagain").onclick=qfStart;$("qfagain").focus();}
+
+// ---------- tabs + help ----------
+function setTab(t){$("t-heist").setAttribute("aria-selected",t==="heist");$("t-qf").setAttribute("aria-selected",t==="qf");
+  $("heist").hidden=t!=="heist";$("qfview").hidden=t!=="qf";if(t==="qf"&&!qf)qfIntro();if(t==="heist")t0=performance.now();}
+$("t-heist").onclick=()=>setTab("heist");$("t-qf").onclick=()=>setTab("qf");
+$("t-help").onclick=()=>{$("help").hidden=false;$("h-close").focus()};
+$("h-close").onclick=()=>{$("help").hidden=true;t0=performance.now();try{localStorage.setItem("lh-seen","1")}catch(e){}};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("help").hidden)$("h-close").click()});
+let seen=null;try{seen=localStorage.getItem("lh-seen")}catch(e){}
+const THEMES=[["vault","Vault","#0a0f1e","#7ef3ff"],["galaxy","Galaxy","#1d1236","#c79bff"],["ocean","Ocean","#0b232b","#5ef0d0"],["forest","Forest","#132116","#9dff6b"],["day","Daylight","#ffffff","#0a86a8"]];
+let theme="vault";try{theme=localStorage.getItem("lh-theme")||"vault"}catch(e){}
+function setTheme(t){theme=t;if(t==="vault")document.documentElement.removeAttribute("data-scheme");else document.documentElement.setAttribute("data-scheme",t);
+  try{localStorage.setItem("lh-theme",t)}catch(e){}
+  $("themes").innerHTML=THEMES.map(([id,n,a,b])=>`<button class="th" data-t="${id}" aria-pressed="${id===theme}" title="${n} theme" aria-label="${n} theme" style="background:linear-gradient(135deg,${a} 50%,${b} 50%)"></button>`).join("");}
+$("themes").onclick=e=>{const b=e.target.closest(".th");if(b)setTheme(b.dataset.t)};setTheme(theme);
+load(0);if(!seen)$("help").hidden=false;
+</script>
+
+</body></html>

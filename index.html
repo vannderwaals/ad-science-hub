@@ -1,0 +1,632 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>AD Science Hub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: launcher. Brand header; Home = Simulations tiles, then Quiz tiles. Quizzes run inside this page (setup -> question -> results). */
+:root{
+  /* AD brand: lavender purple + aqua from the Achievers Dream logo (deepened for readable text) */
+  --purple:#6b56a8; --teal:#1f8f8f; --indigo:#4d5fb3; --lav:#9a8cc4; --aqua:#79cfcf;
+  --bg:#f3f1f9; --paper:#fdfcff; --fg:#1f1a33; --muted:#615a78; --line:#dcd7ea; --soft:#ebe7f5;
+  --accent:var(--purple); --warm:var(--teal); --night:#0a0f1e; --laser:#ff3b5c; --crystal:#7ef3ff; --beam:#3d3654; --grid:#e4e0ef;
+  --forces:var(--purple); --light:var(--teal); --ok:#1a8a4a; --no:#d9480f; --okbg:#e3f4ea; --nobg:#fbe7dc;
+  --f-display:"Familjen Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --acc:var(--forces);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-mode="light"]){
+  --purple:#a796e6; --teal:#6fd3d1; --indigo:#93a4f0;
+  --bg:#14111e; --paper:#1d1929; --fg:#ece8f7; --muted:#a9a2c2; --line:#332d47; --soft:#27223a;
+  --accent:var(--purple); --warm:var(--teal); --beam:#c6bfdc; --grid:#28233b;
+  --forces:var(--purple); --light:var(--teal); --ok:#4fd08a; --no:#ff8a4c; --okbg:#173326; --nobg:#3a2316; color-scheme:dark}}
+:root[data-theme="dark"]:not([data-mode="light"]),:root[data-mode="dark"]{
+  --purple:#a796e6; --teal:#6fd3d1; --indigo:#93a4f0;
+  --bg:#14111e; --paper:#1d1929; --fg:#ece8f7; --muted:#a9a2c2; --line:#332d47; --soft:#27223a;
+  --accent:var(--purple); --warm:var(--teal); --beam:#c6bfdc; --grid:#28233b;
+  --forces:var(--purple); --light:var(--teal); --ok:#4fd08a; --no:#ff8a4c; --okbg:#173326; --nobg:#3a2316; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+body.t-light{--acc:var(--light)}
+body.t-pressure{--acc:var(--indigo)}
+.wrap{max-width:860px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+header{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding-bottom:16px;border-bottom:4px solid var(--purple);border-image:linear-gradient(90deg,var(--purple),var(--teal)) 1}
+.adlogo{height:60px;width:auto;flex:none;background:#fff;border-radius:12px;padding:5px 7px;border:1px solid var(--line)}
+h1{font-family:var(--f-display);font-size:clamp(28px,7vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.lede{margin:4px 0 0;color:var(--muted)}
+[hidden]{display:none!important}
+/* colour schemes (light, then dark: system dark unless forced light, or forced dark) */
+:root[data-scheme="ocean"]{--purple:#1f66b3;--teal:#0f8aa6;--indigo:#3550a8;--bg:#eef4fa;--paper:#fcfeff;--soft:#e3edf7;--line:#d2e0ee;--grid:#dde8f2}
+@media (prefers-color-scheme: dark){:root[data-scheme="ocean"]:not([data-theme="light"]):not([data-mode="light"]){--purple:#79aef0;--teal:#5fd0e6;--indigo:#96a9f2;--bg:#0f1620;--paper:#172130;--soft:#1f2c3e;--line:#2b3a50;--grid:#1f2b3b}}
+:root[data-scheme="ocean"][data-mode="dark"],:root[data-scheme="ocean"][data-theme="dark"]:not([data-mode="light"]){--purple:#79aef0;--teal:#5fd0e6;--indigo:#96a9f2;--bg:#0f1620;--paper:#172130;--soft:#1f2c3e;--line:#2b3a50;--grid:#1f2b3b}
+:root[data-scheme="forest"]{--purple:#2e7d4f;--teal:#5f8a1a;--indigo:#1f7a72;--bg:#f1f6ef;--paper:#fdfefb;--soft:#e6efe2;--line:#d6e3d0;--grid:#e0eadb}
+@media (prefers-color-scheme: dark){:root[data-scheme="forest"]:not([data-theme="light"]):not([data-mode="light"]){--purple:#7fd19f;--teal:#b9d66b;--indigo:#6fcfc4;--bg:#111a14;--paper:#18241c;--soft:#213027;--line:#2d3f33;--grid:#1f2c23}}
+:root[data-scheme="forest"][data-mode="dark"],:root[data-scheme="forest"][data-theme="dark"]:not([data-mode="light"]){--purple:#7fd19f;--teal:#b9d66b;--indigo:#6fcfc4;--bg:#111a14;--paper:#18241c;--soft:#213027;--line:#2d3f33;--grid:#1f2c23}
+:root[data-scheme="sunset"]{--purple:#c2410c;--teal:#be3a7a;--indigo:#a8611a;--bg:#fbf3ef;--paper:#fffdfb;--soft:#f6e8e1;--line:#ecdad1;--grid:#f1e2db}
+@media (prefers-color-scheme: dark){:root[data-scheme="sunset"]:not([data-theme="light"]):not([data-mode="light"]){--purple:#ff9a6b;--teal:#f080b8;--indigo:#f0c060;--bg:#1e1412;--paper:#291c19;--soft:#352521;--line:#46302b;--grid:#33231f}}
+:root[data-scheme="sunset"][data-mode="dark"],:root[data-scheme="sunset"][data-theme="dark"]:not([data-mode="light"]){--purple:#ff9a6b;--teal:#f080b8;--indigo:#f0c060;--bg:#1e1412;--paper:#291c19;--soft:#352521;--line:#46302b;--grid:#33231f}
+.themebtn{margin-left:auto;align-self:flex-start;display:flex;align-items:center;gap:6px;font:inherit;font-weight:700;font-size:14px;color:var(--fg);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer}
+.themebtn svg{width:18px;height:18px}
+.themebtn:focus-visible,.seg button:focus-visible,.sw:focus-visible{outline:3px solid var(--purple);outline-offset:2px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:14px}
+.panel h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:3px;background:var(--bg);flex-wrap:wrap}
+.seg button{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:999px;padding:7px 16px;background:transparent;color:var(--fg);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--purple);color:#fff}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.sw{font:inherit;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;border:2px solid var(--line);background:var(--bg);color:var(--fg);border-radius:12px;padding:7px 12px;cursor:pointer}
+.sw[aria-pressed="true"]{border-color:var(--fg)}
+.sw i{display:flex;border-radius:6px;overflow:hidden}
+.sw i b{width:14px;height:22px}
+
+.vid{display:block;width:100%;max-width:100%;aspect-ratio:16/9;background:#000;border-bottom:1px solid var(--line)}
+#home{display:grid;gap:26px}
+.view{display:grid;gap:16px}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.cat{--cc:var(--accent);display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:22px 20px;background:var(--paper);border:1px solid var(--line);border-top:6px solid var(--cc);border-radius:20px;color:inherit;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.cat:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.10)}
+.cat:focus-visible{outline:3px solid var(--cc);outline-offset:3px}
+.c-vid{--cc:var(--teal)} .c-sim{--cc:var(--purple)} .c-quiz{--cc:var(--indigo)}
+.cicon{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;color:var(--cc);background:color-mix(in srgb,var(--cc) 13%,var(--paper))}
+.cicon svg{width:38px;height:38px}
+.ctext{display:grid;gap:2px}
+.ctitle{font-family:var(--f-display);font-size:26px;font-weight:700;line-height:1.1}
+.cdesc{color:var(--muted);font-size:15px}
+.ccount{margin-top:4px;font-size:13px;font-weight:700;color:var(--cc);text-transform:uppercase;letter-spacing:.06em}
+@media (prefers-reduced-motion:reduce){.cat{transition:none}.cat:hover{transform:none}}
+.sec{display:grid;gap:12px}
+.sechead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sechead h2{font-family:var(--f-display);font-size:22px;margin:0}
+.sechead span{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.tile{display:grid;grid-template-rows:auto 1fr;background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;color:inherit;text-decoration:none;transition:transform .15s,box-shadow .15s,border-color .15s}
+a.tile:hover,button.qtile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.10);border-color:var(--accent)}
+.tile:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.scene{aspect-ratio:16/9;max-width:100%;display:block}
+.scene svg{display:block;width:100%;height:100%}
+.sc-moments{background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:18px 18px;border-bottom:1px solid var(--line)}
+.sc-light{background:var(--night)}
+.sc-pressure{background:linear-gradient(#dff1fb,#f6fbff);border-bottom:1px solid var(--line)}
+.info{padding:14px 16px 16px;display:grid;gap:4px;align-content:start}
+.topic{font-family:var(--f-display);font-size:26px;font-weight:700;margin:0;line-height:1.1}
+.game{margin:0;font-weight:700;color:var(--accent)}
+.desc{margin:0;color:var(--muted);font-size:15px}
+.play{margin-top:8px;justify-self:start;background:var(--fg);color:var(--bg);border-radius:999px;padding:7px 16px;font-weight:700;font-size:15px}
+.qtile{font:inherit;text-align:left;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:16px;background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--qc);border-radius:18px;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s}
+.qtile.forces{--qc:var(--forces)} .qtile.light{--qc:var(--light)} .qtile.pressure{--qc:var(--indigo)}
+.qicon{width:52px;height:52px;border-radius:14px;background:color-mix(in srgb,var(--qc) 14%,var(--paper));display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:22px;color:var(--qc)}
+.qtile .topic{font-size:22px}
+.qtile .desc{font-size:14.5px}
+.qtile .go2{margin-top:6px;font-weight:700;color:var(--qc);font-size:15px}
+.tip{margin:0;font-size:14px;color:var(--muted);border-top:1px dashed var(--line);padding-top:14px}
+.back{justify-self:start}
+@media (prefers-reduced-motion:reduce){.tile,.qtile{transition:none}a.tile:hover,button.qtile:hover{transform:none}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:16px;min-width:0}
+.label{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.choice{border:2px solid var(--line);background:var(--bg);border-radius:14px;padding:12px 14px;text-align:left;display:grid;gap:2px}
+.choice b{font-family:var(--f-display);font-size:20px}
+.choice span{font-size:14px;color:var(--muted)}
+.choice[aria-pressed="true"]{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--paper))}
+.lens{display:flex;gap:10px;flex-wrap:wrap}
+.len{border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:8px 20px;font-family:var(--f-mono);font-size:17px}
+.len[aria-pressed="true"]{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--paper))}
+.go{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:12px 22px;font-weight:700;font-size:17px;justify-self:start}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:12px;padding:10px 18px;font-weight:700;text-decoration:none;color:inherit;display:inline-block}
+.best{margin:0;font-size:14px;color:var(--muted)}
+.qtop{display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:var(--f-mono);font-size:14px;color:var(--muted)}
+.bar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width .3s}
+.tag{font-family:var(--f-body);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--acc)}
+.stem{margin:0;font-size:19px;font-weight:700;line-height:1.4;text-wrap:pretty}
+.opts{display:grid;gap:8px}
+.opt{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:center;text-align:left;border:2px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px}
+.opt:hover:not(:disabled){border-color:var(--acc)}
+.opt .k{width:30px;height:30px;border-radius:8px;background:var(--soft);display:grid;place-items:center;font-family:var(--f-mono);font-size:14px}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.right .k{background:var(--ok);color:#fff}
+.opt.wrong{border-color:var(--no);background:var(--nobg)}
+.opt.wrong .k{background:var(--no);color:#fff}
+.opt.dim{opacity:.55}
+.fb{border-radius:12px;padding:12px 14px;display:grid;gap:4px}
+.fb.ok{background:var(--okbg)} .fb.no{background:var(--nobg)}
+.fb b{font-family:var(--f-display);font-size:18px}
+.fb.ok b{color:var(--ok)} .fb.no b{color:var(--no)}
+.fb p{margin:0;font-size:15.5px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.score{font-family:var(--f-display);font-size:56px;font-weight:700;line-height:1;color:var(--acc)}
+.score small{font-size:24px;color:var(--muted)}
+.msg{margin:0;font-size:18px;font-weight:700}
+.review{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.review li{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:4px;border-left:5px solid var(--ok)}
+.review li.x{border-left-color:var(--no)}
+.review .rq{font-weight:700}
+.review .ra{font-size:15px}
+.review .ra em{font-style:normal;color:var(--no);font-weight:700}
+.review .ra strong{color:var(--ok)}
+.review .rw{font-size:14.5px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+
+</style>
+
+<div class="wrap">
+  <header>
+    <img class="adlogo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIcAAAB1CAYAAABkvfIYAAAzuUlEQVR4nO1dZ1hURxc+t25jl6U36SCiWFABFQuKFRQLaux+sUts2I1iiYkaW4wtxpbYe4m9FyxRxIKCIhaK9A67bL3l+7HsursCaoyKhvd5eNg7c+7szL3vzpw5c+YMwH8ECIpirUeNmve56/ElAf/cFfhUCIuK2iowFZt/7np8SfhPkKNRWNjwRiGhAymZXAYAKAAwn7tOXwLQz12Bjw2+mZl150mRyzEUw3h8E2HLgYOnfO46fSn4qsmBYhj27caN0XyhSIwyAAgL0LJ3/0kYTnA+d92+BHzV5HBv1qyzjbObl5YYKANgamll51i3nv/nrtuXAORzV+BjAedy+VNPnHxlIhSbIywAWk4OYFmQ5hfm/dy/u7tKLpd87npWZ3y1PUfbkaMXaImBsABIOTEQBsDUzNyqWbfw0Z+7jtUdX2XPgXO5/Bknz2TxTIQilNEQAy0nhpYoCMPCwv7dXItzs1M+d32rK77KnqPLhMgVPMGbxED1iIGwACN//OXE565rdcZXSY46LVt11eoYFfUY2qGmlotHvUEzftiNIMhX2YN+KL46cjg1aNRSbGHtoCGAITFAjxgICwAsQJPWHb9p32foTAD0q3sWH4qv6oEgCIL0jZq/A0UQBGWMegwtIaB8eClPx1AMDRsasahll55jP2/tqx++KnLwxWJrCwdHF1SPDK8JomGGZjr7migIq+lN+kfMWNu577dRn6/21Q9fFTmsnJy9ND1Gea+h1THKiYEZ6B7wWq6cLN36j14weHzUn5+3FdUHXxU5HOv4+Fc1lOj3GABgoH8gLACKoEhg225Dp/248bpAaGr1WRpRjVCttXQERfEmXcOGBfbo+50JXyhOT3x878reHUtTE+P/rkh+xv7jaRY2do66KSvLArB6U1g9guiUVUA0PYvOUKbJz05LTlz+w9i2kuLC7E/b6uqDaksOBEXxqKvXyngYl8RoFlAaAKVYwGiALQum9X5488oh43uWXY1lESNiaNdUDIjB6JFGm24kAyxAUsK96JULI9oxDEN/6vZXB1TbYaVuu+BwkuSSFeUNmjL/T5Lk8vXTMILk6XQJXY+BVEgM5B2IgbAseHn7tu43ZPKvH7+11RPVlhzB48YtqiyPxxeY+AS0CtNPE5qZW2mHC2MiGAwlRnaOyoihvW4VFDbC3bN+4MdtbfVEtSUHTySq0qVPZGFpr39NcLgCfR3jjR6DZUEuLZMiYEgM0H4GeIMYwAKQJIczdsKiA8Y91X8B1ZYcyTG3z1eWxwLAk9i/TxukMQz9usd4kxjAAmSlPI83TC//AwAw0lMAXpdhbmZt51m7YZuP1dbqimpLjjsHD26oLO/+tYsHczJSE/XTykqL8ytUPlkWgNGkSwoKMkBn44DXPYYxMYzIAyzAhElLj/zXTOzVtrFpcXE3KIY2cARmGYZ9cOPykX1rlowFlmX18+SS0sJKiVEuqVYo5bSaonUyAK+JAa+nbtohBuB1WSTB4TRoENDlIzW3WqLakoNWq5X7v5/1DQBA0p3bF/cv/WHk8tEDG/25cEa4TFKcX9E9SnlZ2etff7n+UZ6HMAAswkJq0uMY3YvXJ8YbSqn+f40i6+nZqOXHbHN1Q7UlBwDAk6uXjxbn5mQ41vXxjz17cltW8vOHrFGPoY+Ycye36b9MnVWU0f36+bevndmFgN6UF6oiBqsrCwCgXVCPMR+5ydUK1ZocLMNQtw8f+I0nEAiDBw+b8zb5uBuXDyOsoR1D34xubm5T61nC/Wssw1aoY1T6HzSfuRwTEYGTvI/Y5GqFak0OAIBru3cszU1LTWrSIWTg22TzMtKfaY1fwEL5sAG66aqltb2LpKggUyWXywD0p68V/WcNiIGwADiGobUc3et/lIZWQ1R7ctAUpb6844/Flg6O7i269xlXlWxpYW5GYVZmCug5+ei/dD5PYKpQSEulkuKCt+oY2kKNhhkLM1unj9jcaoVqTw4AgLtnTvyZ/OjB312GjvmRKzAxrUyOYRh605KZfViKYaCCl07gJMfNs37zB7evHKmKGAAAb96vSccwjPi4ra0++CLIAQBw+JclY/kmQlHXYRFLqpJ79SIxtiA742VFJnIEANp16jP+0J6102i1mqpsKKlQMQXN59LSopyP29Lqgy+GHFkvn8ftWjJ3SGBI+Gh3H9+gqmTPHd6xzMDeAaB78c6udZuyLLBpyUkP3nUo0aaxNM2+ynjx8OO0sPrhiyEHAEBc9IV9yQlxN/pNmLWB4HJNKpO7fuHoxqSEe9cQvRevHSZEIrEVh8sTPnpw89S7DiXadJVapZBKK7axfI34oshBU5R67czvOhAEhzt0ysKdVcke37txHugRQ0sULsnj163n1/740a0L1SqlEiqxdehMpNp0AHj46O+TH6911Q9fFDkAABhKrdi6aFbfuo0DOgX3GDi1Mrmkx/cu79ywaLTxGgmwAAOGTF3DssD8dXjzAoCKiaEvr53y3rl35QgAAIqimIAvsqhl71a/X/eIpUujdj35bcmp/J+/3/U4rOOQ2VYW9u5cDk+IIigO8MaeGARBUJzPMzF1tHOtb2/jXPdff0j/EqqtJ9jb4BsY3OfbyQt2Lp8+MjDtxZPYimQwjOBELfrzrqOjRz39F42wAAuihjaVSIoLV6w4+tLQ2FUxMQAAxkR2NHdzqRswtM/kNeZm1g4ckqMxiJXna8tgGIaVyaUlCqVMKiuTFOUX5aSWSApy+TwTkZW5naupibk1nycw5fNMRCNmdrEsk5UWfJyn9GH4YskBAOAf1GXIwFGzNqyaH9E+OSn+ZkUyXC5ftGDJnnhLS1tHndGLYeHk8e1LDx5cP6NPn++Wdg0ZPE07BFVkGQUAeJX27CFFq9Vuzt5NEEAM9RQwWqyD8rJ0j9dQVov78X+fXbpxaucPeAQfFV80OQAAgrr0Gd+t76j5axZFdk15VrHjsbmFrcvMORuiLS3tHLUKKEPTzPhxna1wnCBXLjuaRuAE8XpY0R9i9F68/gvXKrlQMTE06Yhhht5HtVqlGjGzs7lKrSz7gOZ/VHxxOocxrpw+sOborvWzJ89Zc8HG3tm7IpnCguyUNb9M715WWlKk7R0wBEN79Rq9sLS0MPvAgXUzWJphjYmh7zVWETEQqLzHqIoYAADPUhJiVGqV7F94BB8NX3zPoYWLe92AaVG/XV27fErXJ/GxFyqSsbZxrL140d7HGIphCADIyqSSiPEdTFmWZefP/uOum0udxm/0HgCvifEvDCUAADRF0+MXhLsUleSl/+MGfwJ88T2HFikvHt+OmtLX65tBk37pNzByVUVeW7k5r5KmTu3hmpeTkVy+1iIcPWzuTgCA3zZF9Wcomq6UGFp8IDEAAM5fP7S+uhMD4CsiBwBAYUFO6vyZQxrK5dLSCZN+/svGxrG2sUxRUd6rWXO+qRMbe+kwwgI09m3dXWxq6ZCTm560ZfvikQB63am+60hVOoYeFMqysipcTuBVVvLjfSc2zv4Hzfvk+GqGFWN4eDZoNXBA5Kr9+9bNePb8QTRFUSpjmeCg8O/6hX+3tKg4P/P7BQPqURSlihj+w94Wfh2+eR/lk6YZprA4Jy09M/kxn29iWse9QWBF5KEotTpq5agWKelJFU69qxu+WnJo0aZV2Mjuod9G/bB4ZPPikvwM43yhidhq8YLdT7buWDLy3oPoIxiGc1Yv+uuVqcjMSqdnVEIMmqbZx09jL2zZu2xMPa8mwSP6Tf8dRVGkQj2Dpujx88Kdi0rfrEN1xVdPDgAAkdDcNsAv+Jv6dfw7bN358+hioxeEozjZoEGLkLS0pHv5hdlpJMkVdG0/cGodz4ZBFmZ2TiRO8mQKSUlubsazF6lP7qSmP3uQk5/xorA4N71zm74T27YIHWZtYe8CABUON3JFmXTxushOz1ITKrTFVFf8J8ihhYmJ2DLQv9MQM5GFbcLT2EuPnsScec8iECcHj4a+PoHdHKyd6zSp36obn8cX6nIrIMbz1MexW/eviEh+lXjnw2r/6fGfIoc+6nj4BrVo2r7fzdgL+0pK8zNz8jJeMCxD6cu0b9Uzon4dv46erg0DRUJTCxRBNc9Lp49UbseQlBUXxsRdObx577KRH7stHwv/WXLoQ2gitunTZcSC5FeJsXfjb5yQKSSFDMPQ2t31KILiXdsPmNraP3SYuZmVPYERJIqiGIpqpssMzbAsyzAUTalKJAU5Jy/tW3Hu2qG1n7dVH44acugBRVGMS2qGCRRFMblSVkrTlFqbjyAIwuPwRVyuQEQSXIGALxAjCIqoVEq5QiUrlcmkpTKFtOi/GrKhBjWoQQ1qUIOPDRRFMRz7tGeY2Fk7eVtbOHi+730ogmIONi71/ks71/4p/g2FFP0lav9zSzMbx+EzO5mqVIqPtgyNojgZ1n7QTB+vpu09nX2apaY/fTB31eh3PjvF2cHTd9bYX86KhGZWCqVctnnfz6Nu3j2/62PV90vHB5/x5u3hG2Rj6eAKAODt3qht3JNb/7oTrqeLT+DYQVHbba1quemnqym18n3K8XJr2EokNLMCAOByePzW/iH/qyFH5fjgVdk2AaH/037u2fF/s5E3HWo/GKXS4rzfdi4cfPXWqW366Qq1Qvo+5VBGZFJTasW/Ub+vFR9EDrHQwr5l006DtNe13eo3d3ep2/zDq2WInPz0pGcp8Tf/urDdIIhcacn7xQi99eDiXqm0pBhAs2i288iamsMAq8AHDSs9Og2dg6KoQU8RFNB12POUj7PAxLKMgZE6vygn7X3ul8mlJRFRYTbmZtZOJZKiHKWq5hivqvBBPYdfgzY9lSqFQdfczLddHx5XIP6n9cFxgotjBLeiM1AYhjUIAyWVlRQaSrx9SKMYSpVbkPlcrVbKUATF3lohFCdJnORj6MfeQI2iBE7ycIzg/stDM4JjBIfASR6CoO/VGfzjnqN9YM/vzEwtbQ+e2vJD+5a9IsQiM0sAAD7PRNQ7ZPiCHYdXT3zHohAXB0/f1gGh/wtu0X0MQZAEAIBEWlp84cbhdfcTbpx8kZZ4h2UZyviRKZQyCQCAh7NPi27BA6a5u9RrLpWW5B6/uGvZ7fsX91HMmw4+HJIndHPy9hvaa9KviS8fXPvz4MoIYxkUQfEG3gGduwYPnF7Xw7eVNv3andM7j13Y+XNGdko8AEBQs7BRarVCpqJUCm2MMgzDCQ7J5Se9fHQjKy/taVCzbiMVirJSmqEpDMNJYFnm1oNL+7Rl2ls7ebdtHjaifWCPsRwOjwcAkJmT9uzAqY1zbj+4fACMlvQwDOc42bs3CAn6JjIt8+Wj4xd3LnawdfHxdvdto1arFFdjTm4BADDhiy1bNAnu3639oJkWYmt7AAA1pVY/Sow5d+nv41seJNw4brzQ+MaLqSqzMuAoTq6adyDZhCcyH/V9qEXDuv5dIocvPqjNzy/KSZ8wv5fju5TVv1vE0m7tB05jWYYtKs7PvBpz6s96tf06eLrU9dP2HqNmdbGSykrzrS3s3VfNPfBce+/KzTN7Cfim5iP7zdhkPLzt+Wv9rOOXdi0B0NhhnOw9G3cNHji1RePgvlqZU1f2rNp5ZG2k/n0kwREsmb7tka21o2uJpDDv8s1jm5o2aNOjlp1rXQAANaVSTf6xv1dBUXbKT1O23Heq5dkAQzFdD8yyLJuRnfLkl62ze2flpj6JGr/+urdHw0AAjSfYycv7ftl34rcZAAjSonH7ARGD5+5gWZaJibt8SCItyWsX2GMMjmEYAMCDJzfPLt0wrTOCoLip0MwmtF3/KR0Cw8eTJIkDAJy/cfT3fcc3fP/bwmNZBEGSDMOwgyJboSiKYstm7U60s3b0KCjMzli8YUpHG0sH93FDFuzhcXkCiqLYETM6maioqs0O/2hYsbN2qiMWWdqduLxnuYpSyJ68iItWqhRybb6lmU2tRt7NQt9WTp+QkT+FtO03GQDgfsKNkxPmhzsdOLVpzg+rx7TYfvjXyQAAmTmpz6SV7Ahr2yxsxMh+MzYqlPIyY32kY+veukAvLZt0HjLx24UH9IkBAMCwiME9KIpi8yb8fsPW2tGVohhm8o/9au8/tWn2rGX/a5Sdm5EMAEDgJBk5bNFRABSdvWJ4kw07fxyqX4a0TFI8fcmg+lm5qU8AABavm9BOoZLL5YoyyeQf+3lpiAHQ1KdVz4jBc3egKIr8sX95xJpt877589DKcZv2LNEt8ft4+gebmVrVCu/07dw184+khbbtH6klBgBAQWF22toFR9IIgiQBAPIKMpMBAJk6/OcTdtaOHgAAP/8+rUtmTsrj+wk3js9bNaoFAECZTJKvol6/r8rw3uRAURSbMnLpMQRBkJg4TXB6aVlJ3tPkRwYbiqaNXnYcxwluZeWITMQ2IW37RWIYhimVctnKLXPCGWAYAE0QloRndy8CADx+du8SVOLO6+5Sr/nMpUN9R8zsKPwuKsxepVbqpqrmYisH7efoO6f+iFzY12XttvmDDAowIlS7Ft3HuDp5NgQAOHpu6w9yRVkxAABNU+rcgkxdj2VlYetI4jgXAJhbDy4dyC/M1inGJgKhWf3afu21117uDVtxSR4v4fn9q/lFmpMozcXWjt8NnbcTRVFErVarb949t1srfzf+2l/azziO47Vs3XwOntkyb/Dk1tiidRM76NfXv0GbXkXF+Zmr/5zb/178jZNZeelJGIbjDvZuuv23PTv/b67WEz896+XDvMKsV/lFOa8qe6b6eG+dw8PZp4W1pZ1z8qukB2mZzx9o05esn9Rh+4orChwnCAAABEGR2q71Ax8/u3exonJC2vSL5JBcHgBAUkr834yRfpCd9+pZbn5m8p2H0Ucrq8uT5/evpGe9fAgAUCwpyr5089jGzm36jNd8/5sjpopSGSjPapXS4NcT0qafboixtqrlEdq2/1QUxQgeVyC0FFvpwj0ROMlFUE3XT9OUcv/JTVERg6O2ab83uGWPMY+S7pwDAAj06zSYotTqrfuWjYHyF+LXoE24tu0UTak7tO49jmUZBsdJjshEbK1fJ3dnb/9HT2+fAQAoKsnP1M+zNLd1HjOnqxUAQEr603vmYus3hvLmvsG9GZredeDU5qjcgoznC3/9rrWpqYVtZc9UH+9Njk6twscBsPDbzoVDOCRPiOj2/qHo89THMXXcG+qCyP+vV+Tq6T8Prg8ABrMMBBCkc1Bf3YsoNmo0AABFqRWTFvZxM07Xx6PEmHP61wWaX0SloGm1AQGV6tddK4bhHBsrB3ftdZN6gV0bevl3ZPX2JxSXFuSwLMDmfUtG6k+D45PuXGAYhtXqPR7O9QIQBEFYlmUb1gno9Dz1cYy+36q3eyOdkkuSJDek7TeR+iE0i0sLchBAkOzc9OfHzm+v9ICApOSEW9rP2XnpSdl56UkAAK8yX8Rbmb+OXRbYtGO/wKYd++08unb6ueiDa/KLc1Kqek5avBc57KydvAN82/UGQGD+pN+uMwxDax8eiqAoh+QK9OUdbF28fWo3DY5PijWIYy40MbUmSY7uuIy39m+VoFRamPs+8gxDGzrhIK9HVU+nun76vc2abfMGxD+9c964biiKIvoOQAAAxaUFmfFJsZca1PEPBgAwF1vZuzl6+9O0Wm1maml76vLelfry9rYuum6/uCQ/c9LCvm4MwxjrPwjD0FRVcVfPXTuwuqL0X/+Y03vh5E23nRw8DCIfDuwe8XPbZl1HzFw61Me4DRXhvcgREtQvEkVR9Fz0wfV5hTkpFKVSqmlNV80lBaYIAhDWYdBMoUBsDgCAoCjSplnoMGNycEiewQkEJoKqT0ioAu/FK4LgGqzEqtWvhxWC5BgQ24QvsqhoqkcbRtzWYeXmWd03/3y2BMdwDABg7OCo7UqlQqZQyMou3zq+0aAe+OsVbB7XxLQiElT2PfooqmCrBQCAmlLJF64ZFxTeZfiCzm1eR2BEEBRxsHWpvXre4bRpiwbUkSmkJVWV/87kIEkuP9Cv06ASSVH+9sO/TqxsjmwqMrfp2m6Aziwd0LBd7wMWm+bkFmS+0KYpVQoZy7I6vcDLtUEgiuA4w1JVz7vfwWj1PtB358srzE7Rr1No8ICpN++drzJ6kD5UakVZelZyvEstjUJrY+HgzjA0dT327G6Z3PAlSMpK8rSLlXyeQOjsULtJSvrTf22jk9BEbK1UKKTbD68a//e9C3uH9p70q0utOo3R8saZmVrYOtm7N0p8GXe1qnLeebYyfugP+7kklxf/NPZCVcaTv+9d2KffReI4jg8MG7dcX6ZUWpSjUKl0v1oBXyge2nviWqjA7qJvmfzQk6Mx9I39s7rysvNePaX1AvG71qrd0KWWV1PjMlAUxUxFFvbG6QAAF28c/V33XRiGEQTJufMw+rCxXEp60gP966BmocMqKo/PMzFHyxXfdwWKoPjCyZtudwrqPREA4FlK/I05y0c0vXjjyEZW772YmJhavLWsd/lCDMM59TwbtwUAOHXFcPw0RvKrp7GpGc/i9NMa1WseYvyrP3x60zz963bNu48c1mea3jEaCDKw+7gV8yZuuKGrLIp90FoQihiawDkkx2B4i314zeBFzhyz/JSQ//qUSBTB8Wmjl59ZNHVrbEXOQhdv/rVBWlZSpL1W0zT94PGtU8ZyCUmxBjO44MAeo7u3H2Swf7a1f8iw1XMPpfl4Ne34ru0D0AzlCIKiLZt2Hqyf/seBFRG5BVnJ2uuikoI3JgHGeOvDRlEUmzz852NcDo9fXFqQl/zqrd0fe/X2qT9cHb10Z6MRBEnOm7j++o9rx7XR7lm9cOPohu4dBs8yEZiaAQBgGIa2b9ljVCu/ToPlSlmpCd/UAsMw7OCpLQtwjOBStFrh5dqghf4Xebj6NI99dO2I9rqWrVs9/XwBT2RRJn9tQCO1YZrKIRRoTP5anLq8Z2Uz37a9tdciobnVuh+PZRUU5aRiKEaITa3sGZpSr9k+rz9FV7Tcz7LX7pzZ0SXomwkAAGv+mNMXym03+rgbf/1YelZKYi07lzoAmlOx+3QdszC03cApEmlxvpnYyp5DcgWPnsZeTHweF629L6BRWwMjnm+9wG4ZOSmP9dMQQFAcw4lati7e3TsMmf3X+e0/6drP0URgLCktyEvNePbgzfobospuOrBJp8F9Qkf8oNvqBwAFxbmZd+KuHtp7YsNMY6+voICuI1r5dx7irbceoQ+VUq64Fntu59YDy0axLMs62LjUixyx6Ii9tfMb7n7Z+RnJB09tnnvz7rmdbk7e/mHBg2b6NwrqqS8jV8hkl/8+tvHizb9+79dt7BK/Bq276+eXySSl0XdO//k46e7l1v4hQ/0atumhn88wDPMoMeb8jiOrIzPLLZodWvYaN7jXxFVaxVIfjxJjLuw5vmFWVfqBo51bg8XTtz2gaLVqwoJwl1JJUYVuBWITc9sFUzbHWJnbvGGbKCopyDl0Zsv8Szf/2gAA4OPl17FLm76TfOu1MDjvhWEYNunlwxsXb/618cbdczsAAEic5K9ZcPSV0MTUHAAg/mns5eRXibG+9QK71rJz9c4vzEqb98vYFkWleW/ds1slORrXa9ndXGzpIJNLixRKhQxFUYzHFYiEJqaWF24cXW9MjsAmnQabi60cyuSlhXJFmUStVikYhmVQFEU5JIfP5wnFXA5feOLirp+1U2AMw4mu7QZMb+ITGEYQHK5SqZTfS7h27NiF3Uu0vzp3p7oBPl5NO0jLSvIVSplErpBLMQzDTYVm1gKB2Co27urhJvVbdiuVFOWVySVFNE1TBEGSQoGpFY8rMM3KS0uyt3b2kpQV5ymUMqlKpZSxmvgcpkKBqWVcYszZzJyUBG07rM3t3fp0Hb3YzqqWB4ZiWJmsrPTklV3L7yfcPPa2BwoAMG7Igr0CrsBs6cZpnVmoIh4DAHTvMDSqUb1mXbgkT0AztDrxRdz1w6e3zJMpynRKrE/tph0c7TwaSOUlBXJ5WQnDMAyOYQRJcnlikYVdflHOq1v3L+4pF0cb+7Ts5t+wTbi9tbMXgZMcFlhWrpBJ7ifcPHny8u6lVU2Pa1CDGtSgBjWoQQ1qUINqg0+yy97O27tJ2/HjFxelpT2TFxXlyyWSIqVMJgUAILlcPsnnCwXm5tYCCwsbvkhkjhEEB+NwuJRCIct49Oj23SNHNhVnZr40Pi60Bh8Xn4QcIltbp9YjRkS5+vm1E9vbu6AYVqFlVq1WqwEAMAzDjd3+yoqLCx6ePLnz4urVM2j1+21mqsE/wyePz9F65Mi5bceOXaCftn3s2I55L14kyEpKCgAABGZmVi5Nm7ZrEBIy0DUgIBjDXq8vpMfH39kbGRlWVlDwXntWavD++ORxSDPi4w1iY1EqlTr13r1oaX5+JqNWKxm1WinJzU1/dOrU9l3jxnWK3rz5J0Zv/bqWj49f2Ny5W+DNRbQa/Mv45A+YUioNrKq0Wq1iabrSSDjRv/8+L/7s2X36abVbtQpp2rv32I9Vxxpo8MnJYWy6ZXUnm1SOm9u3L2No2kDGvXnzTh+hejXQwwfvsn9f0GpDP05GpVKxb4mhlZOUdF9SUJBtam1tp01z9fNrV5EszuXy63fuPDA/NfXpq/v3o1GC4Lj5+7enKUqddv9+NK167WTMNze3qdO2bU97b+8mJhYWNgqptCQ7KSku/syZPdK8NxemMJLkOvj4BFi6udU1tbFxJDgcnkoul2Y/fRqXeOnSYTDyldWHhYtLHd8ePUbc2bdvbUl2dqqbv39HFz+/IAzHiZwXL+ITzp7dR5f7uPDEYss6QUE9rdzcvJVlZZIXf/99Lv3hwxuVlf2x8MnJ8U+DqT2/du1Ek/Bw3Z4ODp+vc+vjm5lZm1ha2jUKC/vWr3fvsTiHQ15avz4q7+XLhHEHDyYKLCwsAQDW9e5dP//ly3gAgNqtW4eFL1q0B8VxPD8l5SnJ4wnMHR3dGoaGDmoXEbFo48CBvvkvX+oW4xp17z68Y2TkCp5IZMowDEur1UqCw9FtvSjMyEj7rU8fb0qhW4xETe3snEzt7FzajBo1z83fPwgA4Nn166cahIYOaRcRYaCU+/boMWLb8OEtzRwdaw/duPGSqY2NbmtFmxEjoo4uWDDs4YkTf/6TZ/dP8cnJ8U+RkZBwR58cWtQPDR0SFhW1GcNxHNGb/jI0TQ9at+6slhgAAFpi1A8NHdJj/vw/UAxDt40Z0yHlzp2LCIKgPX74YXuDkJABBIdDjNy1697i5s21vp5I88GDp/BEItP0R49ito0c2ZZlWbrT1Kmr/fr0GQUAYO7g4GTr5eWbHhd3AwBg3F9/PRPb2TljuOHSf+CQIdM8WrR4Y0h08fUNJPh80dh9++IILtdgvw+CYUizAQMmfmpyfDEav0IqLa0o/fmNG6c29OvX4Nbu3b/qpzcMDR1i4eTkdXbFiqkl2dnpucnJiQAAfHNz266zZ29AMQzNfvbsUUpMzAVgWZZlGDr76dMH2vtJDoe08/ZuAgCAEQTJEwrF0sLCvF3jx3emVCoZrVYrTy1ePFYll+vcHb3btQvXft4zcWLomu7dPVLu3o3WqxaIHRxcfx84sMnKzp2drm7c+KN+3oyrVwuvbtq08Ndu3TzW9+nTgFKpdB7i5o6OHhVuxvmI+GJ6Dp5IJNa/ZhiNr4e8uDhfXlycn/viRbx+voWLi9eOiIiOKTExF1Lv3bti7uzsBQAQOHToNJKr8UJXlJaW1O3QoS8AICSPx7dydzfwJLPz9m6S9eTJXYLL5ZM8nvDE4sVjFKWlOjdAjCQ5spKSfJLHcwQAsPH01G0FKEhJSQQAKMnONggTceKnn0bnPH16HwDgyoYNUa1GjPheF+xWrVb/vWPHCoailAAA948d+8Ovd+9RAAAElytAEARlWfaTxTj9YshhWf5ytch98SJB/5pSKg3c9h6ePLkjJSbmAgBA1pMnd7OePLmL4jjpP2CAbve/Y8OGze3r1m3C0LTuF6qQSiUojuNZiYn3Hp8/fwAAQCGRFK/s3NlBrVCUAQBwRSIzt4CATiGzZq0ViMU6R10Ux98M02A0O8vT02MAACiVSqkla15aWpKWGAAAqXfvXtWSA8WwjxE0qUp8MeSo3aZNN/3r9Lg4g725xvaTnKQkAydnAACOQGCK61lbY/fv/+3M8uXj3+HrWZVMVorhOOE3YEBk+4kTf0YAIOn69dPmtWq5Wru71wUAkBUX572tIFVZmUHAGEatVkM5OUqzslL185QSSfE71O2j4XOQw4D+KEEQCIpiVU1ncS5XILKzc9ZPu71nj4GOgZGkgRKnNcXrg9Sb4ZSXyzeWqbjGCNLy229nNx80KJIvFpvnJycn7Z0ypXtBSkri8O3bb79TGeUwnsob1FkiKaws73Pgk5NDf/oHAIBoxtsq+8smPXuOJAhC12XfP3ZsW35ysoHXNWbUpVfkJ6lWGm6cdvL1DTSWqQiuAQEdgsaMmY/hOFZWXFy4ZehQf4VUs1EJI17vXtPXR74GfPbZCobjJIJVvnEH53L5Tfv00ZnKpQUFuZfXr48ylkMqGu+NoJRISvTXaSycnDztfXyaVSSLoOX7bBAECZk5c512SlqQkpKoJQYAAEcgEGk/0+WryoYFIVU+Y8Ro9dkgr4rn8inwyclhvGsNxTAcreQhICiKD1iz5pyli0ttAAClTFb2+4ABTSS5uW/spic4nLdGJKbVakV8uZJZ/t1o+OLFe7lCoTmU914IiuIiW1unyHPnsnEuV4BiGGnuoNm6CGBIBhTHCVO94U5oZWWnbaReGwyesY50emXoZ+vn8USGe4jRtxDt38YnJ4epra2B7oBiGIITRqGxEQSx9/EJmHD8+AvXJk0CAQDyUlOT1oSFeUjzKj5y07gMksczqUju0po1MymVSjfumzs4OE88eTI54vDhp98dOZI08cSJ5MhTp1IVpaUFKIqiDEWpSrKzdd9p5eZWt82YMQv5ZmbWA1avPoXp+aZ4tmzZtW1ExE/Dt22L0a4a84RCsUF7cRw3utZFGxBZGG6zFFpZGW67RN8v4NuH4pPMjUwsLe2bhIePsfH0rO/cuHFrvlhs8ItQSKUSaX5+pkIiKcYIgiOysXEUmJlZAACUZGdnRG/Z8uPDkye365mmdRBaWTkEDBgQWa9jx75iOzvdBqHizMzU57duXUi6cuXos+vXT2jTEQRB/AcMiOw4adKyipyO1Eql8srvv8+P2b37V6p8rcMtIKDDwLVrTxv3cPHnzh3iiUSm7s2a6SL5KKVS6blVq6bJiory6rZvH14nOLgXQZI64iacO3fgxvbty3impuZNe/Ua6x0crNuIRavVVPSWLT/ePXRoY+Pw8FEtBg2ayjUx0ZH8VVzcrcSrV/+K3b9/vUomq9Ao+G/ik5DDyt29fpuRI6MYhqEZmqZYhmFYhmEQFEURFMW0QwuCoijLsiytUikl+fmZz65fP/3qwYNrDFV5LAnnpk3bNgkPH81QlNqoXBTFMEJSUJB9fsWKScb3+XTqNLBht25D7H18/Dk8nolcIilKjY29Er1580+5z58bTIMRBEH8+vePrNe+fbjAwsK2OCPjZdzx49sfnT27y87Lyzd4/Pglpra2ThmPH9+5smHD3OL09Jch33//O0cgELI0rT3xiUVRFEdxHH8ZE3PJvFYtd7GdnRND01R5PqKpMUHc3rt3TbP+/SfSFKViaJrWtgnFMBzFcfzCqlUzSrI1IaRq8LFR4zhUgxq8H76qM94QBMHftUkoimLoOyxk0TRNvavLu2bd4+vxkEc4JFdIElwujpNcAsMJkuQKUBTFOSSXh6AoxiG4fBTFcJIgeRiG4RhGEBiK4QROcgmC5BI4ySEJDh9BEATHcAJFcQLDNHE0OCSXj6IYhiIohmEEiWMYgWE4B0UQhCS5fBwjCAQFBEUxAkcJksAJjeaOIAhe/hlFEAxB3rQFICiCGcfrQFEMRyogB4IgKI4ShJEs9i5TQ7qCkExqSqWsiIMMQ9PGG6dpmlYDy77hBKSR1XjAUWqVEkDjKUTTapWaUilZlqHUNKVmaYZRqhQyFliGoWm1UiWXASAszVAUTdOUujxCIkWplDSj0V/UlFpFUSoFzdCUSqWQUbRaSdGUmqIoNUWpFBStVqkptZKmKTXD0LRKpZSpabVSpVYpaFqtVqoUUoVCXvYl9xwIvEfPZ7zV4UNgHNztLXirG2QNalCDGtTgkwMvtyQiCIrjelbFGlQMDMM/+EDGdxqH+4WNXVbX3bd1mVxacv764XXujt7+Pl5NO8gVZcVnrx9edz/++l9Dek5a4+5SLyDu8c1Th8/+Mb+ysrp3GBpV38svWKmSywsKc1ItzG0cHzz++/T564crPN7b1srRa2S/mZvORR9aezvu0v5hfadtyMpLe3768r7lFcm/L0z4Yst+XUcvcXWq0yS/MDv1l62zemjqOSQqoFG73k9fPryx7dCbx268Dxp4NwvpENgzQkUrFQggYG1h73bh+pH1V26d2PxPyxwaHrmunmfTdulZL+NVlFLOJbkCU5GF7dFz234SC81tO7XuM/775d/6fki93xmjB87ePuF/C3WLVoN6jF85c8zKs/oy00etOP0uZQ3pNWl19/ZDdNHzVny/J8nM1KpWZfLjhy7YW9u1fst/Uu93xayI1Zf6dR37s/baztqpTlj7wd9/aLk9Og6NmvS/hYf00xzt3Or/NHXrvQ8te1XU/hR7a2ddNGQne49GXYMHzuTzhOazv1tTZYzRd8E7WwY37/15ZIM6fp2x8vNjD53ZusDbw7etUKAJxejj2bT9+esH1wMAcEmesGu7gdNbNO4wUBux3wiIUi3XrZMoVYoyVXk0YQQQpLlvcL8uQd9M1hNHZHJNjCwcxUk7a8c62hxXxzp+3TsMjXKwca7LJXkiSzNbVyd794YoimK1bF3rW5vbu2EYTohFlg6hbQdMb+LTskdF8Ux//WN277Ytuo6yt3aui6IoNnrAnG1nog+sAtDELWvXLGxUaFC/aWKRhQMAAIbihK1lrdoIguIIgmJikYUDh+QJjdvZpW2/yVsOrjDYnfcq62V84suHNwAAIXGS37R+616N6wWG6ctYWzh4cEmeSSu/Lv8zEbwOd2lQOIIipdKiXAAAR3v3hqWSwuzo2ye3UmqlQqlSSE34Iks7a8c6DjYu9UiCIzA1MbezNrd3g3d87+9MDpqmlE+ex11uE9BlKADApGE/HU7NeHa/lV/nIQAAowZ+vy0pJeGms4Onb8Tgubtu3D2329vTt033DhX++tjarvWbh7btP23MgKgdV++c2l5WfqbKlBFLjmfnpT8vLi3I+iVq30tU7+gpLocvmjZmxem6nk3aAQCEdx7+g7WFnWtM3OWDE4ctOszl8E2mjVp+spF38xCGYdjabvWb163dtENdj8btQtr2mxITd/mAf6O2vRvUaRZiXCGZXFK47dCqcRFD5m5v36JnxB8Hlo9VqRQySzNblx8iN95OTI67nvgyLnrW2F/OOjvUblzfy6/jj1O3xGIohrvUqt142cxdjx3t3Axijdta1vKUy8tKJNJi4xjt7I7Dq8YDADvsm+m/F5XkZzSo06xzlzbfTMZQnOjdZcQPs79bdaFt826jzEwt7WZ/t+ZSZe+lfWCviNC2/af2DRn1E0UzVGn5d7Esy9AMTXVrN3B6v65jlzAMTXm41ms2uNekXysryxjvtaYQ9+TWWb/6QeFckmsiK5MWnbt2aH2jui1CRCZmthlZKQllstKCoGahw/OKslMa1vHvJJGWFiiV8jeO91SpFLLUjOcPr9w6seV67OltHVr2GtvIu3lXRzv3hjhOks4Ono0szW1dUtKf3cPLD5oBAFAoZaWJzx9EUwyt5hJcky5BfScK+aYW9Wo3bfci9fFtDodnsnLrjO6N6rXoiiAIa2lm63rl1rFNA7qNXcrQlMrHy69jiaQwW8AXmlXUvpt3L+wuk5YW+zVo3TMt89l9AIBGdZuHPnkeF52Zk/r4RdqT29djz+0M7/zt/AdP/j4pK5MUUbRakfwq8Y5CJZMYe4abia3skbfodX8cWBGhopQKuVImbVgnoDPNUOq4J7fO5BZkvTx9df/KYxd2LOYQJK+SHhhi4i4duHbnzI4XaU9uoyhisGosV5QV7z+1cU5tjwYtcYzg2FjW8lzz55xvoIqdefp4L/+AG7HndvXqPGyBhbm9665ja6cWleZnDwmf9GstW9d6q7fN7QsAYGZqZX/68v5fnibHXausHJLkCkrLivPL5JLC+KTYC+ejD63rHTp8/o0753c/S024feV21YoarVIqzMRWDgqlXHr59omtNE0pLwCs0+aLTMwsnew9fC3MbBwxDMf4fKHprQeXD749vjjL3om/dkRkIrbSWkXFInNbhVKmI3iZrLSI/5pcuhdP0xQFRkRIfBF3TSy2sjcztXIsKsmr8LiPMYOitie9uB/9KPH2GTNTc1sAjVVWpX7tTW98CpU+SqXFeVJZaf6Fm0d/U6sUb8QtKZEUZRUW5qTVq+0XbGVm56yiVO98Yvh79RxyZVlx3OO/j88YvexkiaQwh6YpxfU7Z3eM7D9zo7r8vLC8guy0kOB+07T3CPiiin6lBo11c/Ju+vBJzLn7CddPtAkIGYqiGocYE01o6TfqiGI4kVeQlSwyEVsJ+BpnGgIneSiqmeLejb92bO6EddHbD62awDA0VVZWWuzl1kDrL4oKKxnDtXXTN5fnF+amNazTPER78qQJ39T8bnnUZBZBQLMMgBNCkZmNcRfBsgwdnxhzbtyQeTuNT660Mrd3d3X08lMqZKWnrx74RWhiasGUm9nL472/1aqKIq+XD6TS4nylSqHxbNfTqViWZX/Z8n3Pb7+Zsj63IONFBcVUivf2LLr14PJBgiB5akrjCHM/4eZJGytHD23Y6rPRB1bNHLvy7Jxxa66USktyj5z948cy2WvH246tek9o6N08RC6XlNhaOnjwuELx85SEW+euH/yVZVlIfpV0b8n0Px/mF+WkXrr51yaC4PDcnLz9+4aM/HHz/qWjAnyDvymTleS/fPXkzu+7Fw1bOnNnQnrWy/jHz+5fPXZhxyIGAI6c/XOhjaWDe5lc4829ZseC/tNHLz/l37BNr8Li/Mw9x9fPqKhtHQJ7fde2WdgoDofDV6rkslOX9y678/DKoYBGQeFDek38ValSyrkcrmDHEc3Jl89SH938cfLm2KcvHl6naVrt6ODR8FX2ywTdSwKA33f/9G3/sO+WrV1wJD0l/el9hmWZktLC7Jt3z+998erJrfp1/DpGDJ63J78wO8W/QVCva7dPb+sQ2HOso51Hw05t+kZyCA5PLLJ26NS61/iz0Qd1+kLvLiMWCgSmFiP6z9xy79H1o9Exp/4A0CjPA8LGLfdwqde8mW9wv1v3L+7NLcx8mZuXlXz51vF/PHV+J+AoThI4ofPXRBAUN9bSEQTFTfhiSxR98wgMDMMJDMMJHMM5uMZQ88ZJBnye0FwbeF4rj2E4AYAg2s/aM2G5JF/E55mYGn8PgRtuVcAxgiPgCS2qOnsWRXFSVz/0taENQRBEwBOa87mCN76Hy+GJoPw83MrK1cjxRRZmNs5cDl8EesMPiZN8HNeco6s9jxcvrweO46S2TqjRmbC4Xl01z+Y19J6R7p7QoP7ToAY10AJBUHzehN9uTh6x5HgtO9f6b7+jBv8p4BjB/afLDf8HmMqOuZTjQPEAAAAASUVORK5CYII=" alt="Achievers Dream">
+    <div><h1>AD Science Hub</h1><p class="lede">Watch the video, play the simulation, then test yourself with a quiz.</p></div>
+  <button class="themebtn" id="themebtn" aria-expanded="false" aria-controls="panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-.9 1.2-1.8-.5-1.1.1-2.2 1.3-2.2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1.3" fill="currentColor"/><circle cx="10.5" cy="7" r="1.3" fill="currentColor"/><circle cx="15" cy="7.5" r="1.3" fill="currentColor"/></svg>Theme</button>
+  </header>
+  <div class="panel" id="panel" hidden>
+    <div style="display:grid;gap:8px"><h3>Light or dark</h3>
+      <div class="seg" id="modes"><button data-mode="auto">Auto</button><button data-mode="light">Light</button><button data-mode="dark">Dark</button></div></div>
+    <div style="display:grid;gap:8px"><h3>Colour theme</h3>
+      <div class="swatches" id="schemes"><button class="sw" data-scheme="ad"><i><b style="background:#6b56a8"></b><b style="background:#1f8f8f"></b></i>AD</button><button class="sw" data-scheme="ocean"><i><b style="background:#1f66b3"></b><b style="background:#0f8aa6"></b></i>Ocean</button><button class="sw" data-scheme="forest"><i><b style="background:#2e7d4f"></b><b style="background:#5f8a1a"></b></i>Forest</button><button class="sw" data-scheme="sunset"><i><b style="background:#c2410c"></b><b style="background:#be3a7a"></b></i>Sunset</button></div></div>
+  </div>
+
+  <div id="home">
+    <div class="cats">
+      <a class="cat c-vid" href="#videos">
+        <span class="cicon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="4"/><path d="M19 15 L35 24 L19 33 Z" fill="currentColor"/></svg></span>
+        <span class="ctext"><span class="ctitle">Videos</span><span class="cdesc">Watch short lessons with Sprout</span><span class="ccount">5 videos</span></span>
+      </a>
+      <a class="cat c-sim" href="#simulations">
+        <span class="cicon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M18 6 H30 M20 6 V19 L8 39 Q6 43 11 43 H37 Q42 43 40 39 L28 19 V6" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><circle cx="21" cy="34" r="3" fill="currentColor"/><circle cx="29" cy="30" r="2.5" fill="currentColor"/></svg></span>
+        <span class="ctext"><span class="ctitle">Simulations</span><span class="cdesc">Play and explore science ideas</span><span class="ccount">3 simulations</span></span>
+      </a>
+      <a class="cat c-quiz" href="#quizzes">
+        <span class="cicon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="8" y="6" width="32" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="4"/><path d="M15 18 l4 4 l8 -8 M15 32 l4 4 l8 -8" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="ctext"><span class="ctitle">Quizzes</span><span class="cdesc">Test yourself with fresh questions</span><span class="ccount">3 quizzes</span></span>
+      </a>
+    </div>
+    <p class="tip">Simulations open in a new tab. Close that tab to come back here. To use this like an app, open this page in your phone or tablet browser and choose "Add to Home Screen".</p>
+  </div>
+
+  <div id="v-videos" class="view" hidden>
+    <button class="ghost back">← Home</button>
+    <section class="sec" aria-labelledby="h-vids">
+      <div class="sechead"><h2 id="h-vids">Videos</h2><span>Watch and learn</span></div>
+      <div class="grid">
+        <div class="tile vtile">
+          <video class="vid" controls playsinline preload="none" poster="videos/plant-parts-1.jpg" src="videos/plant-parts-1.mp4"></video>
+          <div class="info">
+            <h3 class="topic">Meet the Plant</h3>
+            <p class="game">Plant Parts · Video 1 · 1:38</p>
+            <p class="desc">Meet Sprout and see how all the parts of a plant work together as a team.</p>
+          </div>
+        </div>
+        <div class="tile vtile">
+          <video class="vid" controls playsinline preload="none" poster="videos/plant-parts-2.jpg" src="videos/plant-parts-2.mp4"></video>
+          <div class="info">
+            <h3 class="topic">Roots</h3>
+            <p class="game">Plant Parts · Video 2 · 1:49</p>
+            <p class="desc">How roots hold the plant firmly and take in water and mineral salts. Some roots store food!</p>
+          </div>
+        </div>
+        <div class="tile vtile">
+          <video class="vid" controls playsinline preload="none" poster="videos/plant-parts-3.jpg" src="videos/plant-parts-3.mp4"></video>
+          <div class="info">
+            <h3 class="topic">Stem</h3>
+            <p class="game">Plant Parts · Video 3 · 2:00</p>
+            <p class="desc">How the stem holds the plant up and carries water, mineral salts and food. Try the celery test!</p>
+          </div>
+        </div>
+        <div class="tile vtile">
+          <video class="vid" controls playsinline preload="none" poster="videos/plant-parts-4.jpg" src="videos/plant-parts-4.mp4"></video>
+          <div class="info">
+            <h3 class="topic">Leaves</h3>
+            <p class="game">Plant Parts · Video 4 · 2:06</p>
+            <p class="desc">How leaves make food using sunlight, and why most leaves are flat and broad.</p>
+          </div>
+        </div>
+        <div class="tile vtile">
+          <video class="vid" controls playsinline preload="none" poster="videos/plant-parts-5.jpg" src="videos/plant-parts-5.mp4"></video>
+          <div class="info">
+            <h3 class="topic">Flowers, Fruits & Seeds</h3>
+            <p class="game">Plant Parts · Video 5 · 1:49</p>
+            <p class="desc">How flowers become fruits, fruits protect seeds, and seeds grow into new plants.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="v-simulations" class="view" hidden>
+    <button class="ghost back">← Home</button>
+    <section class="sec" aria-labelledby="h-sims">
+      <div class="sechead"><h2 id="h-sims">Simulations</h2><span>Opens in a new tab</span></div>
+      <div class="grid">
+        <a class="tile" href="sims/moments/" target="_blank" rel="noopener">
+          <div class="scene sc-moments" aria-hidden="true">
+            <svg viewBox="0 0 320 180">
+              <g transform="rotate(-4 160 120)">
+                <rect x="30" y="114" width="260" height="9" rx="3" fill="var(--beam)"/>
+                <rect x="52" y="78" width="38" height="36" rx="4" fill="var(--paper)" stroke="var(--beam)" stroke-width="2.5"/>
+                <text x="71" y="101" text-anchor="middle" font-size="13" font-family="ui-monospace,monospace" font-weight="700" fill="var(--fg)">6 N</text>
+                <rect x="222" y="90" width="30" height="24" rx="4" fill="var(--paper)" stroke="var(--warm)" stroke-width="2.5"/>
+                <text x="237" y="107" text-anchor="middle" font-size="12" font-family="ui-monospace,monospace" font-weight="700" fill="var(--fg)">4 N</text>
+              </g>
+              <polygon points="160,124 146,152 174,152" fill="var(--beam)"/>
+              <path d="M118 52 a42 42 0 0 0 -30 14" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+              <polygon points="84,60 94,70 82,72" fill="var(--accent)"/>
+              <path d="M202 52 a42 42 0 0 1 30 14" fill="none" stroke="var(--warm)" stroke-width="3" stroke-linecap="round"/>
+              <polygon points="236,60 226,70 238,72" fill="var(--warm)"/>
+            </svg>
+          </div>
+          <div class="info">
+            <h3 class="topic">Moments</h3>
+            <p class="game">Moments Simulation</p>
+            <p class="desc">Balance the beam, earn gold and use a spanner to loosen a nut.</p>
+            <span class="play">Play →</span>
+          </div>
+        </a>
+        <a class="tile" href="sims/laser-heist/" target="_blank" rel="noopener">
+          <div class="scene sc-light" aria-hidden="true">
+            <svg viewBox="0 0 320 180">
+              <g stroke="#141c36" stroke-width="1"><path d="M0 45H320M0 90H320M0 135H320M64 0V180M128 0V180M192 0V180M256 0V180"/></g>
+              <rect x="14" y="80" width="26" height="20" rx="4" fill="#d4defc"/>
+              <polyline points="40,90 150,90 215,40 285,118" fill="none" stroke="var(--laser)" stroke-width="3.5" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px #ff3b5c)"/>
+              <line x1="138" y1="104" x2="162" y2="76" stroke="#d4defc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="202" y1="32" x2="228" y2="48" stroke="#d4defc" stroke-width="5" stroke-linecap="round"/>
+              <polygon points="285,104 297,118 285,132 273,118" fill="var(--crystal)" style="filter:drop-shadow(0 0 8px #7ef3ff)"/>
+            </svg>
+          </div>
+          <div class="info">
+            <h3 class="topic">Light</h3>
+            <p class="game">Laser Heist</p>
+            <p class="desc">Bend and bounce the laser with mirrors and glass to light every crystal and crack the vault.</p>
+            <span class="play">Play →</span>
+          </div>
+        </a>
+        <a class="tile" href="sims/pressure-lab/" target="_blank" rel="noopener">
+          <div class="scene sc-pressure" aria-hidden="true">
+            <svg viewBox="0 0 320 180">
+              <path d="M0 120 L96 120 Q108 112 116 138 L204 138 Q212 112 224 120 L320 120 L320 180 L0 180 Z" fill="#e9cf94"/>
+              <g fill="#d9b56d"><circle cx="40" cy="150" r="3"/><circle cx="270" cy="160" r="3"/><circle cx="160" cy="165" r="2.5"/></g>
+              <rect x="120" y="58" width="80" height="72" rx="8" fill="var(--purple)"/>
+              <text x="160" y="100" text-anchor="middle" font-size="18" font-weight="700" fill="#fff" font-family="var(--f-body)">500 N</text>
+              <rect x="112" y="130" width="96" height="7" rx="3" fill="#3d3654"/>
+              <g stroke="var(--teal)" stroke-width="3" stroke-linecap="round"><path d="M126 140 V156 M146 140 V156 M166 140 V156 M186 140 V156"/></g>
+              <text x="160" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="var(--fg)" font-family="var(--f-mono)">P = F ÷ A</text>
+            </svg>
+          </div>
+          <div class="info">
+            <h3 class="topic">Pressure</h3>
+            <p class="game">Pressure Lab</p>
+            <p class="desc">Guide the explorer across beach, swamp and ice in an Expedition with hearts, combos, bosses and a shop. Plus a sand Lab, 8 missions and tap-only Quick Pick.</p>
+            <span class="play">Play →</span>
+          </div>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <div id="v-quizzes" class="view" hidden>
+    <button class="ghost back">← Home</button>
+    <section class="sec" aria-labelledby="h-quiz">
+      <div class="sechead"><h2 id="h-quiz">Quizzes</h2><span>New questions every round</span></div>
+      <div class="grid">
+        <button class="qtile forces" data-go="forces">
+          <span class="qicon" aria-hidden="true">F</span>
+          <span style="display:grid;gap:2px"><span class="topic">Forces</span><span class="desc">Moments, weight, friction, balanced forces</span><span class="go2">Start quiz →</span></span>
+        </button>
+        <button class="qtile light" data-go="light">
+          <span class="qicon" aria-hidden="true">L</span>
+          <span style="display:grid;gap:2px"><span class="topic">Light</span><span class="desc">Reflection, mirrors, refraction, colour</span><span class="go2">Start quiz →</span></span>
+        </button>
+        <button class="qtile pressure" data-go="pressure">
+          <span class="qicon" aria-hidden="true">P</span>
+          <span style="display:grid;gap:2px"><span class="topic">Pressure</span><span class="desc">P = F ÷ A, units, everyday examples</span><span class="go2">Start quiz →</span></span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" id="setup" hidden>
+    <button class="ghost back" data-to="quizzes">← Quizzes</button>
+    <p class="label">1 · Topic</p>
+    <div class="choices" id="topics">
+      <button class="choice" data-topic="forces" aria-pressed="true"><b>Forces</b><span>Moments, weight, friction, balanced forces</span></button>
+      <button class="choice" data-topic="light" aria-pressed="false"><b>Light</b><span>Reflection, mirrors, refraction, colour</span></button>
+      <button class="choice" data-topic="pressure" aria-pressed="false"><b>Pressure</b><span>P = F ÷ A, units, everyday examples</span></button>
+    </div>
+    <p class="label">2 · Number of questions</p>
+    <div class="lens" id="lens">
+      <button class="len" data-n="5" aria-pressed="false">5</button>
+      <button class="len" data-n="10" aria-pressed="true">10</button>
+      <button class="len" data-n="20" aria-pressed="false">20</button>
+    </div>
+    <button class="go" id="start">Start quiz</button>
+    <p class="best" id="best"></p>
+  </section>
+
+  <section class="card" id="quiz" hidden>
+    <div class="qtop"><span id="qnum"></span><span id="qscore"></span></div>
+    <div class="bar"><i id="qbar"></i></div>
+    <div style="display:grid;gap:6px"><span class="tag" id="qtag"></span><p class="stem" id="stem"></p></div>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb" hidden></div>
+    <div class="row"><button class="go" id="next" hidden>Next</button><button class="ghost" id="quit">End quiz</button></div>
+  </section>
+
+  <section class="card" id="result" hidden>
+    <span class="tag" id="rtag"></span>
+    <div class="score" id="rscore"></div>
+    <p class="msg" id="rmsg"></p>
+    <div class="row"><button class="go" id="again">New quiz</button><button class="ghost" id="change">Change topic</button><button class="ghost back">Home</button></div>
+    <p class="label">Review</p>
+    <ol class="review" id="review"></ol>
+  </section>
+</div>
+
+<script>
+
+(function(){
+const $=id=>document.getElementById(id);
+const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const f=n=>String(Math.round(n*100)/100);
+function mk(tag,q,correct,ds,why){
+  const opts=[correct];
+  for(const d of ds){ if(opts.length<4 && d!==correct && !opts.includes(d)) opts.push(d); }
+  let k=2; while(opts.length<4){ const extra=correct.replace(/[\d.]+/,m=>f(parseFloat(m)*k)); if(!opts.includes(extra)) opts.push(extra); k++; }
+  const s=shuffle(opts); return {tag,q,opts:s,ans:s.indexOf(correct),why};
+}
+
+/* ---------- FORCES: calculation generators ---------- */
+const forcesCalc=[
+  ()=>{const F=R(2,25),d=R(1,9)/10,M=F*d;
+    return mk("Moments","A force of "+F+" N acts at a perpendicular distance of "+d+" m from a pivot. What is the moment of the force about the pivot?",
+      f(M)+" N m",[f(F/d)+" N m",f(F+d)+" N m",f(M*10)+" N m",f(M/10)+" N m"],
+      "Moment = force × perpendicular distance = "+F+" N × "+d+" m = "+f(M)+" N m.")},
+  ()=>{const F=R(2,20),d=pick([10,15,20,25,30,40,50,60,75,80]),M=F*d/100;
+    return mk("Moments","A force of "+F+" N acts "+d+" cm from a pivot. What is the moment in N m?",
+      f(M)+" N m",[f(F*d)+" N m",f(M*10)+" N m",f(F/d)+" N m",f(F+d)+" N m"],
+      "Change cm to m first: "+d+" cm = "+f(d/100)+" m. Moment = "+F+" N × "+f(d/100)+" m = "+f(M)+" N m.")},
+  ()=>{let d1,d2,F1,F2,t=0;do{d1=pick([10,20,30,40,50,60]);d2=pick([10,20,30,40,50,60]);F2=R(2,12);F1=F2*d2/d1;t++}while((!Number.isInteger(F1)||F1===F2||F1>40||d1===d2)&&t<200);
+    return mk("Principle of moments","A beam is balanced at its centre. A "+F2+" N load hangs "+d2+" cm to the right of the pivot. What load must hang "+d1+" cm to the left of the pivot to keep the beam balanced?",
+      f(F1)+" N",[f(F2*d1/d2)+" N",f(F2)+" N",f(F1*2)+" N",f(F1/2)+" N"],
+      "Anticlockwise moment = clockwise moment, so F × "+d1+" = "+F2+" × "+d2+". F = "+(F2*d2)+" ÷ "+d1+" = "+f(F1)+" N.")},
+  ()=>{let d1,d2,F1,F2,t=0;do{F1=R(2,15);F2=R(2,15);d1=pick([10,20,30,40,50]);d2=F1*d1/F2;t++}while((!Number.isInteger(d2)||F1===F2||d2>90||d2<5)&&t<200);
+    return mk("Principle of moments","On a balanced see-saw, a "+F1+" N weight sits "+d1+" cm to the left of the pivot. How far to the right of the pivot must a "+F2+" N weight sit to balance it?",
+      f(d2)+" cm",[f(F2*d1/F1)+" cm",f(d1)+" cm",f(d2*2)+" cm",f(d1+d2)+" cm"],
+      "Moments balance: "+F1+" × "+d1+" = "+F2+" × d, so d = "+(F1*d1)+" ÷ "+F2+" = "+f(d2)+" cm.")},
+  ()=>{const m=R(2,90),W=m*10;
+    return mk("Mass and weight","An object has a mass of "+m+" kg. Taking g = 10 N/kg, what is its weight on Earth?",
+      W+" N",[m+" N",f(m/10)+" N",(m*100)+" N",W+" kg"],
+      "Weight = mass × gravitational field strength = "+m+" kg × 10 N/kg = "+W+" N.")},
+  ()=>{const m=R(5,90);
+    return mk("Mass and weight","An astronaut has a mass of "+m+" kg on Earth. What is the astronaut's mass on the Moon?",
+      m+" kg",[f(m/6)+" kg",(m*10)+" kg","0 kg",(m*10)+" N"],
+      "Mass is the amount of matter, so it is the same everywhere: "+m+" kg. Only weight is smaller on the Moon.")},
+  ()=>{const d=pick([0.1,0.2,0.25,0.4,0.5]),F=pick([20,30,40,50,60,80]),M=F*d;
+    return mk("Moments","A nut needs a moment of "+f(M)+" N m to loosen it. A spanner is pushed at a point "+d+" m from the nut. What is the minimum force needed?",
+      F+" N",[f(M*d)+" N",(F*2)+" N",(F/2)+" N",f(M)+" N"],
+      "Force = moment ÷ distance = "+f(M)+" N m ÷ "+d+" m = "+F+" N.")},
+];
+/* ---------- FORCES: concept bank ---------- */
+const forcesBank=[
+  ["Units","What is the SI unit of force?","newton (N)",["kilogram (kg)","joule (J)","newton metre (N m)"],"Force is measured in newtons (N). N m is the unit of moment and kg is the unit of mass."],
+  ["Units","What is the SI unit of the moment of a force?","N m",["N","N/m","kg m"],"Moment = force (N) × perpendicular distance (m), so its unit is N m."],
+  ["Moments","The moment of a force about a pivot is calculated as…","force × perpendicular distance from the pivot to the line of action of the force",["force × length of the object","force ÷ distance from the pivot","mass × distance from the pivot"],"Moment = F × d, where d is the perpendicular distance from the pivot to the force's line of action."],
+  ["Moments","Door handles are placed far from the hinges because…","a larger distance gives a larger moment for the same force",["it reduces the weight of the door","it increases friction at the hinges","a smaller distance always gives a larger moment"],"Moment = F × d. A bigger distance from the hinge (pivot) means less force is needed to open the door."],
+  ["Moments","Why is it easier to loosen a tight nut with a long spanner?","The same force produces a larger moment",["A long spanner is heavier","A long spanner reduces friction on the nut","The force acts closer to the nut"],"Pushing further from the nut increases the perpendicular distance, so the moment is larger for the same force."],
+  ["Principle of moments","When a beam is in equilibrium, the principle of moments states that…","total clockwise moments = total anticlockwise moments about the pivot",["the forces on both sides must be equal","the distances on both sides must be equal","clockwise moments are greater than anticlockwise moments"],"For balance, the sum of clockwise moments equals the sum of anticlockwise moments about the same pivot."],
+  ["Principle of moments","A heavy child and a light child want to balance on a see-saw. What should they do?","The heavier child sits closer to the pivot",["The heavier child sits further from the pivot","Both sit the same distance from the pivot","The lighter child sits closer to the pivot"],"A larger force needs a smaller distance to give the same moment as the lighter child."],
+  ["Mass and weight","Which statement about mass and weight is correct?","Mass stays the same everywhere; weight depends on gravitational field strength",["Weight stays the same everywhere; mass changes on the Moon","Mass and weight are both measured in newtons","Mass and weight are the same quantity"],"Mass (kg) is the amount of matter. Weight (N) is the gravitational force on it, so it changes with g."],
+  ["Mass and weight","Weight is…","the gravitational force acting on an object",["the amount of matter in an object","the space an object takes up","the push of air on an object"],"Weight is a force: the pull of gravity on an object's mass. W = m × g."],
+  ["Measuring force","Which instrument is used to measure force?","spring balance (newton meter)",["beam balance","measuring cylinder","thermometer"],"A spring balance measures force in newtons. A beam balance compares masses."],
+  ["Types of forces","Which of these is a non-contact force?","magnetic force",["friction","air resistance","tension in a rope"],"Magnetic, gravitational and electrostatic forces act without touching. The others need contact."],
+  ["Friction","Friction always…","opposes motion between surfaces in contact",["acts in the same direction as the motion","only acts on objects in water","increases when surfaces are oiled"],"Friction acts along the surfaces, in the opposite direction to the motion (or attempted motion)."],
+  ["Friction","Which would reduce friction in a bicycle chain?","Applying oil to the chain",["Adding sand to the chain","Making the chain surface rougher","Pressing the surfaces together harder"],"A lubricant like oil keeps the surfaces apart, so they rub less."],
+  ["Effects of forces","Which of these can a force NOT do?","Change the mass of an object",["Change the shape of an object","Change the speed of an object","Change the direction of motion"],"A force can change shape, speed or direction, but the amount of matter (mass) stays the same."],
+  ["Balanced forces","A car moves at a constant speed in a straight line. The forces acting on it are…","balanced",["unbalanced, with the forward force larger","zero, because no forces act on it","unbalanced, with friction larger"],"Balanced forces mean no change in motion: the object stays at rest or keeps moving at constant speed in a straight line."],
+  ["Balanced forces","A book rests on a table. The forces on it are balanced. The book will…","stay at rest",["start moving slowly","speed up downwards","rise upwards"],"With balanced forces there is no resultant force, so an object at rest stays at rest."],
+  ["Air resistance","As a skydiver falls faster, the air resistance acting on them…","increases",["decreases","stays the same","becomes zero"],"Air resistance increases with speed until it balances the weight."],
+];
+
+/* ---------- LIGHT: calculation generators ---------- */
+const lightCalc=[
+  ()=>{let i;do{i=R(15,75)}while(i===45||i===60||i===30);
+    return mk("Reflection","A ray strikes a plane mirror with an angle of incidence of "+i+"°. What is the angle of reflection?",
+      i+"°",[(90-i)+"°",(180-i)+"°",(2*i)+"°"],
+      "Law of reflection: angle of reflection = angle of incidence = "+i+"°.")},
+  ()=>{let t;do{t=R(20,70)}while(t===45||t===30||t===60);
+    return mk("Reflection","A ray hits a plane mirror. The angle between the ray and the mirror surface is "+t+"°. What is the angle of reflection?",
+      (90-t)+"°",[t+"°",(2*t)+"°",(180-2*t)+"°"],
+      "Angles are measured from the normal, which is at 90° to the mirror. Angle of incidence = 90° − "+t+"° = "+(90-t)+"°, so angle of reflection = "+(90-t)+"°.")},
+  ()=>{let i;do{i=R(10,40)}while(i===30);
+    return mk("Reflection","The angle of incidence at a plane mirror is "+i+"°. What is the angle between the incident ray and the reflected ray?",
+      (2*i)+"°",[i+"°",(90-i)+"°",(180-2*i)+"°"],
+      "Angle of reflection = "+i+"°, so the angle between the two rays = "+i+"° + "+i+"° = "+(2*i)+"°.")},
+  ()=>{let A;do{A=pick([40,50,60,70,80,100,110,120,130,140])}while(A===90);
+    return mk("Reflection","The angle between the incident ray and the reflected ray at a plane mirror is "+A+"°. What is the angle of incidence?",
+      (A/2)+"°",[A+"°",(90-A/2)+"°",(180-A)+"°"],
+      "The normal splits the angle equally: angle of incidence = "+A+"° ÷ 2 = "+(A/2)+"°.")},
+  ()=>{const d=R(5,60);
+    return mk("Plane mirrors","An object is placed "+d+" cm in front of a plane mirror. How far is the image from the object?",
+      (2*d)+" cm",[d+" cm",f(d/2)+" cm",(4*d)+" cm"],
+      "The image is "+d+" cm behind the mirror, so object to image = "+d+" + "+d+" = "+(2*d)+" cm.")},
+  ()=>{const d=R(3,8),k=R(1,d-1);
+    return mk("Plane mirrors","A girl stands "+d+" m in front of a plane mirror, then walks "+k+" m towards it. What is the distance between the girl and her image now?",
+      (2*(d-k))+" m",[(d-k)+" m",(2*d)+" m",(2*d-k)+" m",(2*(d+k))+" m"],
+      "She is now "+d+" − "+k+" = "+(d-k)+" m from the mirror. Her image is "+(d-k)+" m behind it, so the distance is "+(2*(d-k))+" m.")},
+];
+/* ---------- LIGHT: concept bank ---------- */
+const lightBank=[
+  ["Properties of light","Which observation shows that light travels in straight lines?","Shadows form behind opaque objects",["White light splits into colours through a prism","A pool looks shallower than it really is","Writing looks reversed in a mirror"],"Light cannot bend around an opaque object, so a shadow forms behind it."],
+  ["Reflection","The angle of incidence is measured between the incident ray and…","the normal",["the mirror surface","the reflected ray","the horizontal"],"All angles in reflection and refraction are measured from the normal."],
+  ["Reflection","The normal is a line drawn…","at 90° to the surface where the ray hits it",["parallel to the surface","along the reflected ray","at 45° to the surface"],"The normal is perpendicular (90°) to the surface at the point of incidence."],
+  ["Plane mirrors","Which is NOT a property of the image formed by a plane mirror?","It is upside down",["It is the same size as the object","It is laterally inverted","It is as far behind the mirror as the object is in front"],"A plane mirror image is upright, same size, laterally inverted, virtual, and the same distance behind the mirror."],
+  ["Plane mirrors","The image in a plane mirror is virtual. This means it…","cannot be formed on a screen",["is smaller than the object","is upside down","is formed in front of the mirror"],"Rays only appear to come from behind the mirror, so the image cannot be caught on a screen."],
+  ["Reflection","Light hits a rough surface such as paper. What happens?","Diffuse reflection: light is scattered in many directions",["Regular reflection: all rays reflect parallel","No reflection: all the light is absorbed","Refraction: all the light bends into the paper"],"Each tiny part of a rough surface faces a different way, so parallel rays reflect in many directions."],
+  ["Refraction","Why does light bend when it passes from air into glass?","Its speed changes as it enters a different medium",["Its colour changes","The glass reflects all of the light","The glass pulls the light downwards"],"Light slows down in glass. This change in speed makes it change direction (refract)."],
+  ["Refraction","A ray passes at an angle from air into glass. It bends…","towards the normal",["away from the normal","along the surface","back into the air"],"Light slows down entering a denser medium like glass, so it bends towards the normal."],
+  ["Refraction","A ray passes at an angle from water into air. It bends…","away from the normal",["towards the normal","without bending at all","along the normal"],"Light speeds up entering a less dense medium like air, so it bends away from the normal."],
+  ["Refraction","A ray enters a glass block along the normal (at 90° to the surface). It…","passes straight through without bending",["bends towards the normal","bends away from the normal","is reflected back"],"A ray travelling along the normal changes speed but not direction."],
+  ["Refraction","A swimming pool looks shallower than it really is. This is because of…","refraction",["reflection","dispersion","diffuse reflection"],"Light from the bottom bends away from the normal as it leaves the water, so the bottom appears higher."],
+  ["Dispersion","White light passes through a prism and splits into a spectrum of colours. This is called…","dispersion",["diffuse reflection","total reflection","absorption"],"Each colour refracts by a different amount, so white light spreads out into a spectrum."],
+  ["Dispersion","In the spectrum formed by a prism, which colour is bent the most?","violet",["red","green","yellow"],"Violet light slows down the most in glass, so it refracts the most. Red refracts the least."],
+  ["Properties of light","Which of these is a non-luminous object?","the Moon",["the Sun","a candle flame","a lit light bulb"],"The Moon does not give out its own light. We see it because it reflects sunlight."],
+  ["Colour","A shirt looks red in white light because it…","reflects red light and absorbs the other colours",["absorbs red light and reflects the other colours","gives out its own red light","refracts white light into red"],"The colour we see is the colour of light the object reflects."],
+  ["Colour","A red shirt is placed under pure blue light. It appears…","black",["red","blue","purple"],"The shirt reflects only red. Blue light is absorbed and no red light reaches it, so nothing is reflected."],
+  ["Properties of light","Frosted glass lets some light through, but you cannot see clearly through it. It is…","translucent",["transparent","opaque","luminous"],"Translucent materials let some light through but scatter it, so images are not clear."],
+];
+
+/* ---------- PRESSURE ---------- */
+const big=n=>Math.round(n).toLocaleString("en-US");
+const pressureCalc=[
+  ()=>{const A=pick([0.02,0.04,0.05,0.1,0.2,0.25,0.4,0.5]);let F;do{F=R(2,90)*10}while(!Number.isInteger(F/A));const P=F/A;
+    return mk("Pressure","A force of "+F+" N acts on an area of "+A+" m². What is the pressure?",big(P)+" Pa",[big(F*A)+" Pa",f(A/F)+" Pa",big(P/10)+" Pa",big(P*10)+" Pa"],
+      "P = F ÷ A = "+F+" N ÷ "+A+" m² = "+big(P)+" Pa.")},
+  ()=>{const A=pick([2,4,5,10,20,25]);let F;do{F=R(2,40)*5}while(!Number.isInteger(F/A));const P=F/A;
+    return mk("Pressure","A force of "+F+" N acts on an area of "+A+" cm². What is the pressure in N/cm²?",f(P)+" N/cm²",[f(F*A)+" N/cm²",f(A/F)+" N/cm²",f(P*10)+" N/cm²",f(P/10)+" N/cm²"],
+      "P = F ÷ A = "+F+" N ÷ "+A+" cm² = "+f(P)+" N/cm².")},
+  ()=>{const A=pick([10,20,25,40,50,100,200]);let F;do{F=R(1,40)*5}while(!Number.isInteger(F*10000/A));const P=F*10000/A;
+    return mk("Units","A force of "+F+" N acts on "+A+" cm². What is the pressure in pascals (N/m²)?",big(P)+" Pa",[f(F/A)+" Pa",big(P/100)+" Pa",big(P*100)+" Pa",big(F*A)+" Pa"],
+      "Change cm² to m²: "+A+" cm² = "+f(A/10000)+" m². P = "+F+" ÷ "+f(A/10000)+" = "+big(P)+" Pa.")},
+  ()=>{const P=pick([500,800,1000,1500,2000,2500,4000]),A=pick([0.1,0.2,0.3,0.4,0.5,0.6]),F=P*A;
+    return mk("Pressure","A crate exerts a pressure of "+big(P)+" Pa on an area of "+A+" m². What is the force (its weight)?",f(F)+" N",[f(P/A)+" N",f(A/P)+" N",f(F*10)+" N",f(F/10)+" N"],
+      "F = P × A = "+big(P)+" × "+A+" = "+f(F)+" N.")},
+  ()=>{const F=pick([1000,2000,3000,5000,8000,12000]),P=pick([2000,4000,5000,10000,20000]),A=F/P;
+    return mk("Pressure","An object of weight "+big(F)+" N must not exert more than "+big(P)+" Pa on the ground. What is the smallest area it needs?",f(A)+" m²",[f(P/F)+" m²",f(A*10)+" m²",f(A/10)+" m²",big(F*P)+" m²"],
+      "A = F ÷ P = "+big(F)+" ÷ "+big(P)+" = "+f(A)+" m².")},
+  ()=>{const A=pick([50,200,400,500,2500,5000]);
+    return mk("Units","What is "+A+" cm² in m²?",f(A/10000)+" m²",[f(A/100)+" m²",f(A/1000)+" m²",f(A*100)+" m²",f(A/100000)+" m²"],
+      "1 m² = 100 cm × 100 cm = 10 000 cm², so "+A+" cm² = "+A+" ÷ 10 000 = "+f(A/10000)+" m².")},
+  ()=>{const W=pick([20,30,40,60]);const P=W/0.005;
+    return mk("Pressure","A "+W+" N brick measures 20 cm × 10 cm × 5 cm. What is the greatest pressure it can exert on the floor?",big(P)+" Pa",[big(W/0.02)+" Pa",big(W/0.01)+" Pa",big(W*0.005)+" Pa"],
+      "Greatest pressure comes from the smallest face: 10 cm × 5 cm = 50 cm² = 0.005 m². P = "+W+" ÷ 0.005 = "+big(P)+" Pa.")},
+  ()=>{const P=pick([10000,12000,15000,20000]);
+    return mk("Pressure","A girl standing on both feet exerts "+big(P)+" Pa on the floor. What pressure does she exert standing on one foot?",big(P*2)+" Pa",[big(P/2)+" Pa",big(P)+" Pa",big(P*4)+" Pa"],
+      "Same weight, half the area, so the pressure doubles: "+big(P)+" × 2 = "+big(P*2)+" Pa.")},
+];
+const pressureBank=[
+  ["Definition","Pressure is defined as…","force acting per unit area",["force × area","area ÷ force","mass per unit volume"],"P = F ÷ A: the force acting on each unit of area."],
+  ["Units","What is the SI unit of pressure?","pascal (Pa)",["newton (N)","newton metre (N m)","kilogram per m³"],"Pressure is measured in pascals. 1 Pa = 1 N/m²."],
+  ["Units","1 pascal is equal to…","1 N/m²",["1 N/cm²","1 N m","1 kg/m²"],"A pascal is one newton of force acting on one square metre."],
+  ["Area and pressure","The same force acts on a smaller area. The pressure…","increases",["decreases","stays the same","becomes zero"],"P = F ÷ A. Dividing by a smaller area gives a bigger answer."],
+  ["Everyday pressure","Why are snowshoes wide and flat?","They spread the weight over a large area, reducing pressure on the snow",["They make the person lighter","They increase the pressure so the shoes grip","They reduce friction with the snow"],"A large area means low pressure, so the person does not sink."],
+  ["Everyday pressure","Why does a sharp knife cut better than a blunt one?","Its thin edge has a small area, so the same force gives a large pressure",["It is heavier","Its edge has a large area","It has less friction with the food"],"Small area → large pressure, which cuts through the food easily."],
+  ["Everyday pressure","A drawing pin has a sharp point and a wide, flat head. Why?","The point gives high pressure on the board; the flat head gives low pressure on your thumb",["Both ends give high pressure","The head makes the pin heavier","The point reduces the force needed on your thumb to zero"],"Same force, different areas: tiny point = high pressure; wide head = low pressure."],
+  ["Everyday pressure","Why do tractors working on soft fields have wide tyres?","Wide tyres spread the weight, so the pressure is lower and they don't sink",["Wide tyres make the tractor lighter","Wide tyres increase the pressure for better grip","Wide tyres reduce the weight of the tractor"],"A bigger contact area lowers the pressure on the soft ground."],
+  ["Everyday pressure","Heavy lorries often have many wheels. This…","spreads the weight over a larger area, reducing pressure on the road",["makes the lorry lighter","increases pressure on the road","reduces the lorry's weight"],"More wheels = more contact area = less pressure on the road."],
+  ["Everyday pressure","Why do school bags have wide straps?","Wide straps spread the force over a larger area of the shoulders",["Wide straps make the bag lighter","Wide straps increase the pressure","Wide straps reduce the mass of the books"],"Larger area → lower pressure, so the straps are more comfortable."],
+  ["Everyday pressure","Camels can walk on soft sand without sinking because…","their wide feet give a large area, so the pressure is low",["they are very light","their feet are pointed","sand pushes them up"],"Wide feet spread the camel's weight over a large area."],
+  ["Area and pressure","Which change would DOUBLE the pressure on the floor?","Halving the area while keeping the force the same",["Doubling the area","Halving the force","Doubling both the force and the area"],"P = F ÷ A. Half the area with the same force gives twice the pressure."],
+  ["Everyday pressure","A person lies on a bed of many nails without getting hurt. This is because…","the weight is spread over many nails, so the pressure on each point is low",["the nails are blunt","the person has no weight","the nails push with zero force"],"Many contact points share the force, so each one gives only a small pressure."],
+];
+
+const TOPICS={
+  forces:{name:"Forces",calc:forcesCalc,bank:forcesBank},
+  light:{name:"Light",calc:lightCalc,bank:lightBank},
+  pressure:{name:"Pressure",calc:pressureCalc,bank:pressureBank}
+};
+
+function build(topic,n){
+  const T=TOPICS[topic];
+  const nCalc=Math.round(n*0.4);
+  const bank=shuffle(T.bank).slice(0,n-nCalc).map(b=>mk(b[0],b[1],b[2],b[3],b[4]));
+  const calc=[];let gens=shuffle(T.calc);
+  while(calc.length<n-bank.length){ if(!gens.length) gens=shuffle(T.calc); calc.push(gens.pop()()); }
+  return shuffle(bank.concat(calc));
+}
+
+/* ---------- state ---------- */
+let topic="forces";
+let n=10, Qs=[], idx=0, score=0, answers=[];
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+function paintSetup(){
+  document.body.classList.toggle("t-light",topic==="light");document.body.classList.toggle("t-pressure",topic==="pressure");
+  document.querySelectorAll("#topics .choice").forEach(b=>b.setAttribute("aria-pressed",b.dataset.topic===topic));
+  document.querySelectorAll("#lens .len").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.n===n));
+  const b=store.get("best-"+topic+"-"+n);
+  $("best").textContent=b?("Your best for "+TOPICS[topic].name+" ("+n+" questions): "+b+" / "+n):"";
+}
+function show(id){["home","v-videos","v-simulations","v-quizzes","setup","quiz","result"].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)}
+
+document.querySelectorAll("#topics .choice").forEach(b=>b.onclick=()=>{topic=b.dataset.topic;try{history.replaceState(null,"","#"+topic+"-quiz")}catch(e){}paintSetup()});
+document.querySelectorAll("#lens .len").forEach(b=>b.onclick=()=>{n=+b.dataset.n;paintSetup()});
+
+
+function start(){Qs=build(topic,n);idx=0;score=0;answers=[];show("quiz");render()}
+$("start").onclick=start;$("again").onclick=start;
+$("change").onclick=()=>{paintSetup();show("setup")};
+$("quit").onclick=()=>{if(answers.length)finish();else{paintSetup();show("setup")}};
+
+function render(){
+  const q=Qs[idx];
+  $("qnum").textContent="Question "+(idx+1)+" of "+Qs.length;
+  $("qscore").textContent="Score "+score;
+  $("qbar").style.width=(idx/Qs.length*100)+"%";
+  $("qtag").textContent=TOPICS[topic].name+" · "+q.tag;
+  $("stem").textContent=q.q;
+  const box=$("opts");box.innerHTML="";
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement("button");b.className="opt";
+    b.innerHTML='<span class="k">'+"ABCD"[i]+'</span><span></span>';
+    b.lastChild.textContent=o;
+    b.onclick=()=>choose(i);box.appendChild(b);
+  });
+  $("fb").hidden=true;$("next").hidden=true;
+}
+function choose(i){
+  const q=Qs[idx],btns=[...$("opts").children],ok=i===q.ans;
+  btns.forEach((b,j)=>{b.disabled=true;if(j===q.ans)b.classList.add("right");else if(j===i)b.classList.add("wrong");else b.classList.add("dim")});
+  if(ok)score++;
+  answers.push({q:q.q,your:q.opts[i],right:q.opts[q.ans],ok,why:q.why});
+  const fb=$("fb");fb.className="fb "+(ok?"ok":"no");fb.hidden=false;
+  fb.innerHTML="<b></b><p></p>";
+  fb.firstChild.textContent=ok?"Correct!":"Not quite. The answer is "+"ABCD"[q.ans]+".";
+  fb.lastChild.textContent=q.why;
+  $("qscore").textContent="Score "+score;
+  $("qbar").style.width=((idx+1)/Qs.length*100)+"%";
+  const nx=$("next");nx.hidden=false;nx.textContent=idx===Qs.length-1?"See results":"Next";nx.focus();
+}
+$("next").onclick=()=>{idx++;if(idx<Qs.length)render();else finish()};
+
+function finish(){
+  const total=answers.length,pct=total?score/total:0;
+  $("rtag").textContent=TOPICS[topic].name+" · "+total+" questions";
+  $("rscore").innerHTML=score+"<small> / "+total+"</small>";
+  $("rmsg").textContent=pct===1?"Perfect score! Excellent work.":pct>=0.8?"Great job! Just a few to review.":pct>=0.5?"Good effort. Read the explanations below and try again.":"Keep practising. Go through the explanations below, then have another go.";
+  if(total===n){const k="best-"+topic+"-"+n,b=+(store.get(k)||0);if(score>b)store.set(k,score)}
+  const ol=$("review");ol.innerHTML="";
+  answers.forEach((a,i)=>{
+    const li=document.createElement("li");if(!a.ok)li.className="x";
+    li.innerHTML='<div class="rq"></div><div class="ra"></div><div class="rw"></div>';
+    li.children[0].textContent=(i+1)+". "+a.q;
+    if(a.ok){li.children[1].innerHTML="✓ <strong></strong>";li.children[1].lastChild.textContent=a.right}
+    else{li.children[1].innerHTML="✗ You chose <em></em> · Answer: <strong></strong>";li.children[1].children[0].textContent=a.your;li.children[1].children[1].textContent=a.right}
+    li.children[2].textContent=a.why;ol.appendChild(li);
+  });
+  show("result");
+}
+function route(){const m=location.hash.slice(1).match(/^(forces|light|pressure)-quiz$/);
+  if(m){topic=m[1];paintSetup();show("setup")}else{document.body.classList.remove("t-light","t-pressure");const h=location.hash.slice(1);show(["videos","simulations","quizzes"].includes(h)?"v-"+h:"home")}}
+window.addEventListener("hashchange",route);
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{location.hash=b.dataset.go+"-quiz"});
+document.querySelectorAll(".back").forEach(b=>b.onclick=()=>{location.hash=b.dataset.to||"home"});
+route();
+document.addEventListener("play",e=>{document.querySelectorAll("video").forEach(v=>{if(v!==e.target)v.pause()})},true);
+window.addEventListener("hashchange",()=>document.querySelectorAll("video").forEach(v=>v.pause()));
+
+(function(){const R=document.documentElement,ST={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+function apply(){const m=ST.get("ad-mode")||"auto",c=ST.get("ad-scheme")||"ad";
+  if(m==="auto")R.removeAttribute("data-mode");else R.setAttribute("data-mode",m);
+  if(c==="ad")R.removeAttribute("data-scheme");else R.setAttribute("data-scheme",c);
+  document.querySelectorAll("#modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  document.querySelectorAll("#schemes .sw").forEach(b=>b.setAttribute("aria-pressed",b.dataset.scheme===c));}
+document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>{ST.set("ad-mode",b.dataset.mode);apply()});
+document.querySelectorAll("#schemes .sw").forEach(b=>b.onclick=()=>{ST.set("ad-scheme",b.dataset.scheme);apply()});
+const tb=document.getElementById("themebtn"),pn=document.getElementById("panel");
+tb.onclick=()=>{pn.hidden=!pn.hidden;tb.setAttribute("aria-expanded",!pn.hidden)};
+apply();})();
+})();
+
+</script>
+
+</body></html>

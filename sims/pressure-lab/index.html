@@ -1,0 +1,481 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Pressure Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: brand header + stars, tabs (Lab / Missions); a sand-tank stage on top, controls and the P = F / A readout below. AD purple + aqua. */
+:root{
+  --purple:#6b56a8; --teal:#1f8f8f; --gold:#e3a614;
+  --bg:#f3f1f9; --paper:#fdfcff; --fg:#1f1a33; --muted:#615a78; --line:#dcd7ea; --soft:#ebe7f5;
+  --sky1:#dff1fb; --sky2:#f6fbff; --sand:#e9cf94; --sand2:#d9b56d; --mud:#8a6446; --mud2:#6e4e35; --snow:#f4f8fc; --snow2:#d6e3ef;
+  --load:#6b56a8; --base:#3d3654; --ok:#1a8a4a; --no:#d9480f; --okbg:#e3f4ea; --nobg:#fbe7dc;
+  --f-display:"Familjen Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --purple:#a796e6; --teal:#6fd3d1; --bg:#14111e; --paper:#1d1929; --fg:#ece8f7; --muted:#a9a2c2; --line:#332d47; --soft:#27223a;
+  --sky1:#1b2236; --sky2:#232b42; --load:#8f7ad6; --base:#c6bfdc; --ok:#4fd08a; --no:#ff8a4c; --okbg:#173326; --nobg:#3a2316; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --purple:#a796e6; --teal:#6fd3d1; --bg:#14111e; --paper:#1d1929; --fg:#ece8f7; --muted:#a9a2c2; --line:#332d47; --soft:#27223a;
+  --sky1:#1b2236; --sky2:#232b42; --load:#8f7ad6; --base:#c6bfdc; --ok:#4fd08a; --no:#ff8a4c; --okbg:#173326; --nobg:#3a2316; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding-block:18px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:4px solid var(--purple);border-image:linear-gradient(90deg,var(--purple),var(--teal)) 1}
+.adlogo{height:54px;width:auto;flex:none;background:#fff;border-radius:12px;padding:4px 6px;border:1px solid var(--line)}
+h1{font-family:var(--f-display);font-size:clamp(26px,6vw,36px);margin:0;line-height:1.05}
+.lede{margin:2px 0 0;color:var(--muted);font-size:15px}
+.lede b{font-family:var(--f-mono);font-weight:500;color:var(--fg)}
+.stars{margin-left:auto;display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700}
+.stars b{font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.stars i{font-style:normal;color:var(--gold);font-size:20px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--purple);outline-offset:2px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 16px;font-weight:700}
+.tab[aria-selected="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:14px;min-width:0}
+.stage{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(var(--sky1),var(--sky2))}
+.stage svg{display:block;width:100%;height:auto}
+#sinkg,#mloadg,#labfront,#mfront,#qloadg,#qfront{transition:transform .6s cubic-bezier(.34,1.3,.5,1)}
+@media (prefers-reduced-motion:reduce){#sinkg,#mloadg,#labfront,#mfront,#qloadg,#qfront{transition:none}}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.presets{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
+.chip[aria-pressed="true"]{border-color:var(--purple);background:color-mix(in srgb,var(--purple) 14%,var(--paper))}
+.ctrl{display:grid;gap:4px}
+.ctrl label{display:flex;justify-content:space-between;gap:10px;font-weight:700}
+.ctrl label span{font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--purple)}
+.readout{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.readout{grid-template-columns:1fr}}
+.rd{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);min-width:0}
+.rd small{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.rd b{font-family:var(--f-mono);font-weight:500;font-size:20px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rd.p{border-color:var(--teal);background:color-mix(in srgb,var(--teal) 10%,var(--paper))}
+.formula{font-family:var(--f-mono);font-size:15px;background:var(--soft);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere}
+.rule{margin:0;color:var(--muted);font-size:15px}
+.levels{display:flex;gap:6px;flex-wrap:wrap}
+.lv{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font-family:var(--f-mono);display:grid;place-items:center;line-height:1;padding:3px;gap:1px}
+.lv small{font-size:10px;color:var(--gold);letter-spacing:-1px;font-family:var(--f-body)}
+.lv[aria-current="true"]{border:2px solid var(--purple)}
+.mtitle{font-family:var(--f-display);font-size:22px;margin:0}
+.story{margin:0}
+.opts{display:grid;gap:8px}
+.opt{display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;border:2px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 14px}
+.opt span:last-child{font-family:var(--f-mono);font-size:14px;color:var(--muted)}
+.opt:disabled{cursor:default}
+.opt[aria-pressed="true"]{border-color:var(--purple)}
+.opt.right{border-color:var(--ok);background:var(--okbg)} .opt.wrong{border-color:var(--no);background:var(--nobg)}
+.ans{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ans input{width:140px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-family:var(--f-mono);font-size:17px}
+.go{background:var(--purple);color:#fff;border:0;border-radius:12px;padding:10px 20px;font-weight:700}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:12px;padding:9px 16px;font-weight:700}
+.fb{border-radius:12px;padding:12px 14px;display:grid;gap:6px}
+.fb.ok{background:var(--okbg)} .fb.no{background:var(--nobg)}
+.fb b{font-family:var(--f-display);font-size:18px}.fb.ok b{color:var(--ok)}.fb.no b{color:var(--no)}
+.fb .sol{font-family:var(--f-mono);font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.hintbox{margin:0;font-size:15px;background:color-mix(in srgb,var(--gold) 16%,var(--paper));border:1px solid var(--gold);border-radius:10px;padding:10px 12px}
+.done{text-align:center;display:grid;gap:8px;justify-items:center;padding:14px}
+.done h2{font-family:var(--f-display);margin:0;font-size:28px}
+.xhud{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.hearts{display:flex;gap:4px;font-size:24px;line-height:1}
+.hearts span{color:#e2455a}.hearts span.off{color:var(--line)}
+.hearts.hit{animation:shake .3s 2}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.xcoins{display:flex;align-items:center;gap:6px}.xcoins b{font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.coin{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe58a,#e3a614 60%,#a8740a);box-shadow:inset 0 0 0 2px #b8860b}
+.bump{animation:bump .5s}@keyframes bump{40%{transform:scale(1.25)}}
+.xcombo{font-weight:700;color:var(--teal);font-family:var(--f-mono);font-size:14px}
+.xbtns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.sm{padding:6px 12px;font-size:14px}
+.zones{display:flex;gap:6px;flex-wrap:wrap}
+.zone{border:2px solid var(--line);background:var(--paper);border-radius:12px;padding:6px 12px;font-weight:700;font-size:14px}
+.zone[aria-pressed="true"]{border-color:var(--purple);background:color-mix(in srgb,var(--purple) 12%,var(--paper))}
+.zone:disabled{opacity:.45;cursor:not-allowed}
+.mapwrap{border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.mapwrap svg{display:block;width:100%;height:auto}
+#xexplorer{transition:transform .9s cubic-bezier(.45,0,.3,1)}
+@media (prefers-reduced-motion:reduce){#xexplorer{transition:none}.hearts.hit,.bump{animation:none}}
+.xtag{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;border-radius:999px;padding:4px 10px;background:var(--soft);color:var(--purple)}
+.xtag.boss{background:#e2455a;color:#fff}
+.timer{display:flex;align-items:center;gap:10px}.tbar{flex:1;height:10px;background:var(--soft);border-radius:99px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--teal);border-radius:99px;transition:width .2s linear}
+#xtsec{font-family:var(--f-mono);min-width:40px;text-align:right}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,8,20,.55);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.mcard{background:var(--paper);border:2px solid var(--purple);border-radius:18px;padding:18px;width:min(480px,100%);max-height:100%;overflow:auto;display:grid;gap:12px}
+.mcard h2{font-family:var(--f-display);margin:0;font-size:24px}
+.shopitem{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.shopitem small{display:block;color:var(--muted)}
+.badge{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.badge .bi{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--soft);color:var(--muted);flex:none}
+.badge.got .bi{background:linear-gradient(135deg,var(--purple),var(--teal));color:#fff}
+.badge small{display:block;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <img class="adlogo" src="__LOGO__" alt="Achievers Dream">
+    <div><h1>Pressure Lab</h1><p class="lede">Pressure = force ÷ area &nbsp;<b>P = F / A</b> · Guide the explorer to safety!</p></div>
+    <div class="stars" title="Stars from missions"><i aria-hidden="true">★</i><b id="stars">0</b><span id="maxstars" style="color:var(--muted);font-weight:400"></span></div>
+  </header>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-exp" aria-selected="true">Expedition</button>
+    <button class="tab" role="tab" id="t-lab" aria-selected="false">Lab</button>
+    <button class="tab" role="tab" id="t-mis" aria-selected="false">Missions</button>
+    <button class="tab" role="tab" id="t-qp" aria-selected="false">Quick Pick</button>
+  </div>
+
+  <!-- EXPEDITION -->
+  <section class="card" id="exp">
+    <div class="xhud">
+      <div class="hearts" id="xhearts" aria-label="Hearts"></div>
+      <div class="xcoins"><span class="coin" aria-hidden="true"></span><b id="xcoins">0</b></div>
+      <div class="xcombo" id="xcombo"></div>
+      <div class="xbtns"><button class="ghost sm" id="xshopbtn">Shop</button><button class="ghost sm" id="xbadgebtn">Badges</button><button class="ghost sm" id="xhowbtn">How to play</button></div>
+    </div>
+    <div class="zones" id="xzones"></div>
+    <div class="mapwrap"><svg viewBox="0 0 640 210" id="xmap" aria-label="Expedition map"></svg></div>
+    <div id="xchal" style="display:grid;gap:12px">
+      <div class="row" style="justify-content:space-between"><h2 class="mtitle" id="xtitle"></h2><span class="xtag" id="xtag"></span></div>
+      <p class="story" id="xstory"></p>
+      <div class="timer" id="xtimer" hidden><div class="tbar"><i id="xtfill"></i></div><span id="xtsec"></span></div>
+      <div class="stage"><svg viewBox="0 0 640 300" aria-label="Challenge scene"><g id="xground"></g><g id="xloadg"><g id="xload"></g></g><g id="xfront"></g></svg></div>
+      <div id="xinput"></div>
+      <div class="row"><button class="go" id="xcheck">Check</button><button class="ghost" id="xhint">Use hint scroll (<span id="xhints">0</span>)</button></div>
+      <p class="hintbox" id="xhinttxt" hidden></p>
+      <div class="fb" id="xfb" hidden></div>
+      <div class="row"><button class="go" id="xnext" hidden>Continue</button></div>
+    </div>
+  </section>
+
+  <div class="modal" id="xmodal" hidden><div class="mcard" role="dialog" aria-modal="true" aria-labelledby="xmt"><h2 id="xmt"></h2><div id="xmb"></div><button class="go" id="xmclose">Close</button></div></div>
+
+  <!-- LAB -->
+  <section class="card" id="lab" hidden>
+    <div class="stage"><svg viewBox="0 0 640 300" id="labsvg" aria-label="A load pressing into sand">
+      <g id="labground"></g>
+      <g id="sinkg"><g id="labload"></g></g>
+      <g id="labfront"></g>
+    </svg></div>
+    <div class="presets" id="presets"></div>
+    <div class="ctrl"><label for="sF">Force (weight) <span id="vF"></span></label><input id="sF" type="range" min="10" max="2000" step="10" value="600"></div>
+    <div class="ctrl"><label for="sA">Contact area <span id="vA"></span></label><input id="sA" type="range" min="1" max="100" step="1" value="40"></div>
+    <div class="readout">
+      <div class="rd"><small>Force</small><b id="rF"></b></div>
+      <div class="rd"><small>Area</small><b id="rA"></b></div>
+      <div class="rd p"><small>Pressure</small><b id="rP"></b></div>
+    </div>
+    <div class="formula" id="formula"></div>
+    <p class="rule" id="rule"></p>
+  </section>
+
+  <!-- MISSIONS -->
+  <section class="card" id="mis" hidden>
+    <div class="levels" id="levels"></div>
+    <h2 class="mtitle" id="mtitle"></h2>
+    <p class="story" id="mstory"></p>
+    <div class="stage"><svg viewBox="0 0 640 300" id="msvg" aria-label="Mission scene">
+      <g id="mground"></g><g id="mloadg"><g id="mload"></g></g><g id="mfront"></g>
+    </svg></div>
+    <div id="minput"></div>
+    <div class="row"><button class="go" id="check">Check</button><button class="ghost" id="hintbtn">Hint</button></div>
+    <p class="hintbox" id="hint" hidden></p>
+    <div class="fb" id="mfb" hidden></div>
+    <div class="row"><button class="go" id="next" hidden>Next mission</button></div>
+  </section>
+  <!-- QUICK PICK -->
+  <section class="card" id="qp" hidden>
+    <div id="qpbody" style="display:grid;gap:14px">
+      <div class="row" style="justify-content:space-between;font-family:var(--f-mono);font-size:14px;color:var(--muted)"><span id="qpnum"></span><span id="qpscore"></span></div>
+      <div style="height:8px;background:var(--soft);border-radius:99px;overflow:hidden"><i id="qpbar" style="display:block;height:100%;width:0;background:var(--purple);transition:width .3s"></i></div>
+      <h2 class="mtitle" id="qpq"></h2>
+      <div class="stage"><svg viewBox="0 0 640 300" aria-label="Scene for the question"><g id="qground"></g><g id="qloadg"><g id="qload"></g></g><g id="qfront"></g></svg></div>
+      <p class="rule">Tap an answer. No typing, just pick!</p>
+      <div class="opts" id="qpopts"></div>
+      <div class="fb" id="qpfb" hidden></div>
+      <div class="row"><button class="go" id="qpnext" hidden>Next</button></div>
+    </div>
+    <div class="done" id="qpend" hidden><h2>Quick Pick done!</h2><div style="font-family:var(--f-display);font-size:52px;font-weight:700;color:var(--purple)" id="qpres"></div><p id="qpmsg" style="margin:0"></p><button class="go" id="qpagain">Play again</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id),NS="http://www.w3.org/2000/svg";
+const mk=(tag,a,p)=>{const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
+const fmt=n=>{const a=Math.abs(n);const r=a>=100?Math.round(n):a>=1?Math.round(n*100)/100:Number(n.toPrecision(3));return r.toLocaleString("en-US",{maximumFractionDigits:8})};
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+/* ---------- scene drawing ---------- */
+const GY=210; // ground surface y
+const MAT={sand:["--sand","--sand2","sand"],mud:["--mud","--mud2","mud"],snow:["--snow","--snow2","snow"]};
+function ground(g,mat,dent,w){g.innerHTML="";const[c1,c2]=MAT[mat];
+  const half=w/2,cx=320,d=dent;
+  const path=`M0 ${GY} L${cx-half-26} ${GY} Q${cx-half-12} ${GY-d*.35} ${cx-half} ${GY+d} L${cx+half} ${GY+d} Q${cx+half+12} ${GY-d*.35} ${cx+half+26} ${GY} L640 ${GY} L640 300 L0 300 Z`;
+  mk("path",{d:path,fill:`var(${c1})`},g);
+  for(let i=0;i<26;i++){const x=(i*97)%640,y=GY+18+((i*53)%70);mk("circle",{cx:x,cy:y,r:2+(i%3),fill:`var(${c2})`,opacity:.7},g)}
+  mk("text",{x:16,y:290,"font-size":14,"font-family":"var(--f-mono)",fill:`var(${c2})`},g).textContent=MAT[mat][2];
+}
+// a load: box of fixed size sitting on a base (contact) of width w
+function load(g,w,label,kind){g.innerHTML="";const cx=320,bw=Math.max(6,w);
+  const top=GY-130;
+  if(kind==="person"){mk("circle",{cx,cy:top+14,r:16,fill:"var(--load)"},g);mk("rect",{x:cx-22,y:top+32,width:44,height:62,rx:14,fill:"var(--load)"},g);
+    mk("rect",{x:cx-14,y:top+90,width:10,height:34,fill:"var(--load)"},g);mk("rect",{x:cx+4,y:top+90,width:10,height:34,fill:"var(--load)"},g)}
+  else if(kind==="elephant"){mk("ellipse",{cx,cy:top+70,rx:70,ry:46,fill:"#8e8aa3"},g);mk("circle",{cx:cx+66,cy:top+48,r:28,fill:"#8e8aa3"},g);mk("path",{d:`M${cx+86} ${top+60} q14 30 4 56`,stroke:"#8e8aa3","stroke-width":12,fill:"none","stroke-linecap":"round"},g);
+    for(const dx of[-46,-16,16,42])mk("rect",{x:cx+dx-9,y:top+100,width:18,height:26,fill:"#8e8aa3"},g)}
+  else{mk("rect",{x:cx-60,y:top+20,width:120,height:GY-8-(top+20),rx:10,fill:"var(--load)"},g);
+    mk("text",{x:cx,y:top+76,"text-anchor":"middle","font-size":20,"font-weight":700,fill:"#fff","font-family":"var(--f-body)"},g).textContent=label||""}
+  // base (contact area)
+  mk("rect",{x:cx-bw/2,y:GY-8,width:bw,height:8,rx:3,fill:"var(--base)"},g);
+}
+function arrows(g,w,density){g.innerHTML="";const n=Math.max(2,Math.min(14,Math.round(w/22)));const len=10+Math.min(40,density*40);
+  for(let i=0;i<n;i++){const x=320-w/2+(i+.5)*w/n;mk("line",{x1:x,y1:GY+2,x2:x,y2:GY+4+len,stroke:"var(--teal)","stroke-width":3,"stroke-linecap":"round"},g);mk("path",{d:`M${x-5} ${GY+len-2} L${x} ${GY+6+len} L${x+5} ${GY+len-2}`,fill:"var(--teal)"},g)}}
+// map pressure (Pa) to a dent depth in px. soft = max Pa the ground holds without sinking far.
+function dentFor(P,soft){const r=P/soft;return r<=1?4+r*14:Math.min(70,18+Math.log2(r)*16)}
+
+/* ---------- LAB ---------- */
+const AREAS=[];for(let i=1;i<=100;i++){AREAS.push(Number(Math.pow(10,1+3*(i-1)/99).toPrecision(2)))} // 10 .. 10000 cm2 (log)
+const PRE=[["Brick on its end",30,50],["You in sneakers",500,300],["You in high heels",500,20],["You on snowshoes",500,2000],["Elephant (4 feet)",50000,4000]];
+let labKind="box",labLabel="LOAD";
+const presets=$("presets");PRE.forEach(([n,F,A],i)=>{const b=document.createElement("button");b.className="chip";b.textContent=n;b.onclick=()=>{
+  if(F>2000){$("sF").min=500;$("sF").max=60000;$("sF").step=500}else{$("sF").min=10;$("sF").max=2000;$("sF").step=10}
+  $("sF").value=F;let k=0,best=1e9;AREAS.forEach((a,j)=>{const d=Math.abs(Math.log(a/A));if(d<best){best=d;k=j}});$("sA").value=k+1;
+  labKind=i===4?"elephant":(i>=1&&i<=3?"person":"box");labLabel=i===0?"BRICK":"LOAD";
+  [...presets.children].forEach(c=>c.setAttribute("aria-pressed",c===b));drawLab()};presets.appendChild(b)});
+function drawLab(){const F=+$("sF").value,A=AREAS[+$("sA").value-1],Am=A/10000,P=F/Am;
+  $("vF").textContent=fmt(F)+" N";$("vA").textContent=fmt(A)+" cm²";
+  $("rF").textContent=fmt(F)+" N";$("rA").textContent=fmt(A)+" cm² = "+fmt(Am)+" m²";$("rP").textContent=fmt(P)+" Pa";
+  $("formula").textContent="P = F ÷ A = "+fmt(F)+" N ÷ "+fmt(Am)+" m² = "+fmt(P)+" N/m² (Pa)   ·   "+fmt(F/A)+" N/cm²";
+  const w=Math.max(8,Math.min(560,Math.sqrt(A)*5.5));const dent=dentFor(P,20000);
+  ground($("labground"),"sand",dent,w);load($("labload"),w,labLabel,labKind);$("sinkg").style.transform=$("labfront").style.transform=`translateY(${dent}px)`;arrows($("labfront"),w,Math.min(1,Math.log10(P)/6));
+  $("rule").textContent=P>20000?"The sand can't hold this much pressure. The load sinks in! Try a bigger area or a smaller force.":(P<5000?"Low pressure: the force is spread over a large area, so it hardly sinks.":"Medium pressure: it makes a small dent.");}
+$("sF").oninput=()=>{[...presets.children].forEach(c=>c.setAttribute("aria-pressed","false"));drawLab()};$("sA").oninput=$("sF").oninput;
+
+/* ---------- MISSIONS ---------- */
+// type: "num" (answer a number, unit) or "pick" (choose an option; scene shows each option when picked)
+const M=[
+ {t:"Warm-up: box on the floor",s:"A box weighs 200 N. Its base has an area of 0.5 m². What pressure does it put on the floor?",type:"num",unit:"Pa",ans:400,
+  scene:{mat:"sand",soft:20000,w:240,P:400,label:"200 N"},hint:"P = F ÷ A. Divide the force by the area.",sol:"P = F ÷ A = 200 N ÷ 0.5 m² = 400 Pa"},
+ {t:"Mud hike",s:"A 600 N hiker must cross mud that sinks above 15 000 Pa. Which footwear keeps them on top of the mud?",type:"pick",mat:"mud",soft:15000,F:600,kind:"person",
+  opts:[["High heels",0.004],["Sneakers",0.03],["Snowshoes",0.12]],ans:2,hint:"Work out P = 600 ÷ area for each. Which one is below 15 000 Pa?",
+  sol:"Heels: 600 ÷ 0.004 = 150 000 Pa · Sneakers: 600 ÷ 0.03 = 20 000 Pa · Snowshoes: 600 ÷ 0.12 = 5 000 Pa. Only snowshoes stay below 15 000 Pa."},
+ {t:"Which way up?",s:"A brick weighs 30 N. It measures 20 cm × 10 cm × 5 cm. Which face should it stand on to give the GREATEST pressure?",type:"pick",mat:"sand",soft:20000,F:30,kind:"box",label:"BRICK",
+  opts:[["20 cm × 10 cm face",0.02],["20 cm × 5 cm face",0.01],["10 cm × 5 cm face",0.005]],ans:2,hint:"Same force every time. The smaller the area, the greater the pressure.",
+  sol:"Areas: 0.02, 0.01 and 0.005 m². P = 30 ÷ 0.005 = 6 000 Pa on the smallest face (the others give 1 500 Pa and 3 000 Pa)."},
+ {t:"Convert first!",s:"A 50 N force acts on an area of 25 cm². What is the pressure in pascals (N/m²)?",type:"num",unit:"Pa",ans:20000,
+  scene:{mat:"sand",soft:20000,w:40,P:20000,label:"50 N"},hint:"Change cm² to m² first: divide by 10 000. So 25 cm² = 0.0025 m².",sol:"25 cm² = 25 ÷ 10 000 = 0.0025 m².  P = 50 ÷ 0.0025 = 20 000 Pa  (or 50 ÷ 25 = 2 N/cm²)"},
+ {t:"Sharp or blunt?",s:"You push a knife with 20 N. Which blade cuts the bread most easily?",type:"pick",mat:"snow",soft:200000,F:20,kind:"box",label:"KNIFE",
+  opts:[["Blunt edge (0.0005 m²)",0.0005],["Sharp edge (0.00001 m²)",0.00001]],ans:1,hint:"Cutting needs a big pressure. A smaller area gives a bigger pressure.",
+  sol:"Blunt: 20 ÷ 0.0005 = 40 000 Pa · Sharp: 20 ÷ 0.00001 = 2 000 000 Pa. The sharp edge gives 50 times more pressure, so it cuts easily."},
+ {t:"Find the force",s:"A crate presses on the ground with a pressure of 2 000 Pa over an area of 0.3 m². What is its weight?",type:"num",unit:"N",ans:600,
+  scene:{mat:"sand",soft:20000,w:200,P:2000,label:"? N"},hint:"Rearrange: F = P × A.",sol:"F = P × A = 2 000 Pa × 0.3 m² = 600 N"},
+ {t:"Save the elephant",s:"A 50 000 N elephant walks on soft ground that sinks above 100 000 Pa. What is the smallest total foot area it needs, in m²?",type:"num",unit:"m²",ans:0.5,
+  scene:{mat:"mud",soft:100000,w:150,P:100000,kind:"elephant"},hint:"Rearrange: A = F ÷ P.",sol:"A = F ÷ P = 50 000 N ÷ 100 000 Pa = 0.5 m²"},
+ {t:"Tractor on a wet field",s:"A farmer's tractor keeps sinking into a wet field. Which change helps most?",type:"pick",mat:"mud",soft:30000,F:40000,kind:"box",label:"TRACTOR",
+  opts:[["Narrow tyres (0.6 m² total)",0.6],["Wide tyres (2.0 m² total)",2.0]],ans:1,hint:"Wide tyres spread the weight over a bigger area.",
+  sol:"Narrow: 40 000 ÷ 0.6 ≈ 66 667 Pa (sinks) · Wide: 40 000 ÷ 2.0 = 20 000 Pa (stays up). Bigger area → smaller pressure."}
+];
+let cur=0,best={};try{best=JSON.parse(store.get("pl-best")||"{}")}catch(e){best={}}
+let tries=0,picked=-1,solved=false;
+function totalStars(){return Object.values(best).reduce((a,b)=>a+b,0)}
+function paintStars(){$("stars").textContent=totalStars();$("maxstars").textContent=" / "+M.length*3}
+function paintLevels(){const L=$("levels");L.innerHTML="";M.forEach((m,i)=>{const b=document.createElement("button");b.className="lv";b.setAttribute("aria-label","Mission "+(i+1));
+  if(i===cur)b.setAttribute("aria-current","true");b.innerHTML="<span>"+(i+1)+"</span><small>"+"★".repeat(best[i]||0)+"</small>";b.onclick=()=>openM(i);L.appendChild(b)})}
+function areaW(Am){return Math.max(6,Math.min(560,Math.sqrt(Am*10000)*5.5))}
+function sceneDraw(mat,soft,Am,P,label,kind,wOverride){const w=wOverride||areaW(Am);const dent=dentFor(P,soft);
+  ground($("mground"),mat,dent,w);load($("mload"),w,label,kind);$("mloadg").style.transform=$("mfront").style.transform=`translateY(${dent}px)`;arrows($("mfront"),w,Math.min(1,Math.log10(P)/6.5))}
+function openM(i){cur=i;tries=0;picked=-1;solved=false;const m=M[i];
+  $("mtitle").textContent="Mission "+(i+1)+": "+m.t;$("mstory").textContent=m.s;$("hint").hidden=true;$("hint").textContent=m.hint;$("mfb").hidden=true;$("next").hidden=true;$("check").hidden=false;$("hintbtn").hidden=false;
+  const box=$("minput");box.innerHTML="";
+  if(m.type==="num"){const sc=m.scene;sceneDraw(sc.mat,sc.soft,0,sc.P*0.6,sc.label,sc.kind||"box",sc.w);
+    box.innerHTML='<div class="ans"><label for="numin" style="font-weight:700">Answer</label><input id="numin" inputmode="decimal" autocomplete="off"><span style="font-family:var(--f-mono)">'+m.unit+'</span></div>';
+    $("numin").addEventListener("keydown",e=>{if(e.key==="Enter")check()})}
+  else{sceneDraw(m.mat,m.soft,m.opts[0][1],m.F/m.opts[0][1],m.label,m.kind);const d=document.createElement("div");d.className="opts";
+    m.opts.forEach(([n,a],k)=>{const b=document.createElement("button");b.className="opt";b.innerHTML="<span></span><span></span>";b.firstChild.textContent=n;b.lastChild.textContent="tap to try";
+      b.onclick=()=>{if(solved)return;picked=k;[...d.children].forEach(c=>c.setAttribute("aria-pressed",c===b));sceneDraw(m.mat,m.soft,a,m.F/a,m.label,m.kind)};d.appendChild(b)});box.appendChild(d)}
+  paintLevels()}
+function check(){if(solved)return;const m=M[cur];let ok=false;
+  if(m.type==="num"){const v=parseFloat(($("numin").value||"").replace(/[, ]/g,""));if(isNaN(v)){$("numin").focus();return}ok=Math.abs(v-m.ans)<=Math.abs(m.ans)*0.01+1e-9}
+  else{if(picked<0){$("mfb").hidden=false;$("mfb").className="fb no";$("mfb").innerHTML="<b>Pick an option first.</b>";return}ok=picked===m.ans}
+  tries++;const fb=$("mfb");fb.hidden=false;
+  if(ok){solved=true;const st=tries===1?3:tries===2?2:1;best[cur]=Math.max(best[cur]||0,st);store.set("pl-best",JSON.stringify(best));paintStars();
+    fb.className="fb ok";fb.innerHTML="<b></b><div class='sol'></div>";fb.firstChild.textContent="Correct! "+"★".repeat(st)+" ("+st+" star"+(st>1?"s":"")+")";fb.lastChild.textContent=m.sol;
+    if(m.type==="pick")[...$("minput").querySelector(".opts").children].forEach((c,k)=>{c.lastChild.textContent=fmt(m.F/m.opts[k][1])+" Pa";if(k===m.ans)c.classList.add("right")});
+    if(m.type==="num"){const sc=m.scene;sceneDraw(sc.mat,sc.soft,0,sc.P,sc.label,sc.kind||"box",sc.w)}
+    $("check").hidden=true;$("hintbtn").hidden=true;$("next").hidden=false;$("next").textContent=cur<M.length-1?"Next mission":"See your stars";paintLevels()}
+  else{fb.className="fb no";fb.innerHTML="<b></b>";fb.firstChild.textContent=tries>=2?"Not yet. Here's how:":"Not quite. Try again!";
+    if(tries>=2){const s=document.createElement("div");s.className="sol";s.textContent=m.sol;fb.appendChild(s)}
+    if(m.type==="pick"){const c=$("minput").querySelector(".opts").children[picked];c.lastChild.textContent=fmt(m.F/m.opts[picked][1])+" Pa";c.classList.add("wrong");setTimeout(()=>c.classList.remove("wrong"),900)}}
+}
+$("check").onclick=check;$("hintbtn").onclick=()=>{$("hint").hidden=false};
+$("next").onclick=()=>{if(cur<M.length-1)openM(cur+1);else{const box=$("minput");$("mtitle").textContent="All missions complete!";$("mstory").textContent="You earned "+totalStars()+" of "+M.length*3+" stars. Replay any mission to improve your stars.";$("mfb").hidden=true;$("next").hidden=true;box.innerHTML=""}};
+
+
+/* ---------- QUICK PICK (select options only) ---------- */
+// rule: "max" = greatest pressure wins, "min" = least pressure wins, number = only option below that pressure wins
+const QP=[
+ {q:"Which presses hardest on the floor?",rule:"max",mat:"sand",soft:20000,kind:"person",o:[["600 N in high heels",600,0.002],["800 N in sneakers",800,0.04],["1 200 N in boots",1200,0.06]],why:"The small heels give a tiny area, so the pressure is huge even though the weight is smallest."},
+ {q:"Which way should a 30 N brick lie to give the LEAST pressure?",rule:"min",mat:"sand",soft:20000,kind:"box",label:"BRICK",o:[["On its 20 × 10 cm face",30,0.02],["On its 20 × 5 cm face",30,0.01],["On its 10 × 5 cm face",30,0.005]],why:"Same force each time, so the biggest face gives the least pressure."},
+ {q:"Snow holds up to 10 000 Pa. Who can walk on it without sinking?",rule:10000,mat:"snow",soft:10000,kind:"box",label:"ANIMAL",o:[["Deer, 900 N on small hooves",900,0.01],["Snow hare, 30 N on furry feet",30,0.006],["Dog, 300 N on paws",300,0.02]],why:"Only the snow hare's pressure is below 10 000 Pa."},
+ {q:"You hit each nail with the same 50 N. Which goes into the wood most easily?",rule:"max",mat:"snow",soft:1e7,kind:"box",label:"NAIL",o:[["Very sharp tip",50,0.000001],["Pointed tip",50,0.00001],["Flat tip",50,0.0001]],why:"The sharpest tip has the smallest area, so it gives the greatest pressure."},
+ {q:"Which 500 N chair is least likely to sink into a soft carpet?",rule:"min",mat:"sand",soft:20000,kind:"box",label:"CHAIR",o:[["Thin metal legs",500,0.0016],["Thick wooden legs",500,0.01],["Wide flat base",500,0.16]],why:"The wide base spreads the weight over the biggest area."},
+ {q:"Surprise! Which gives the GREATEST pressure on the ground?",rule:"max",mat:"mud",soft:100000,kind:"box",label:"",o:[["Elephant: 50 000 N on 0.5 m²",50000,0.5],["Woman in high heels: 600 N on 0.004 m²",600,0.004],["Car: 12 000 N on 0.1 m²",12000,0.1]],why:"High heels win! 150 000 Pa beats the elephant's 100 000 Pa, because the heels have such a tiny area."},
+ {q:"A 40 000 N tractor must cross a wet field. Which sinks the least?",rule:"min",mat:"mud",soft:30000,kind:"box",label:"TRACTOR",o:[["Narrow tyres",40000,0.6],["Wide tyres",40000,2],["Caterpillar tracks",40000,4]],why:"Tracks have the largest contact area, so the pressure is lowest."},
+ {q:"You push with 20 N. Which knife edge cuts best?",rule:"max",mat:"snow",soft:1e6,kind:"box",label:"KNIFE",o:[["Blunt edge",20,0.0005],["Sharp edge",20,0.00001],["Spoon handle",20,0.002]],why:"The sharp edge has the smallest area, so it gives the largest pressure."},
+ {q:"An 80 N school bag. Which strap is most comfortable on your shoulder?",rule:"min",mat:"sand",soft:20000,kind:"box",label:"BAG",o:[["Thin string",80,0.0005],["Narrow strap",80,0.004],["Wide padded strap",80,0.012]],why:"The wide strap spreads the force, so the pressure on your shoulder is lowest."},
+ {q:"A 700 N person must cross thin ice. What is the safest way?",rule:"min",mat:"snow",soft:60000,kind:"person",o:[["Stand on one foot",700,0.02],["Walk normally",700,0.04],["Lie flat and crawl",700,0.6]],why:"Lying flat spreads the weight over a large area, so the pressure on the ice is lowest."},
+ {q:"Which animal sinks LEAST into soft sand?",rule:"min",mat:"sand",soft:30000,kind:"box",label:"ANIMAL",o:[["Camel: 5 000 N, wide feet",5000,0.2],["Horse: 5 000 N, hooves",5000,0.03],["Goat: 400 N, small hooves",400,0.008]],why:"The camel's wide feet give the lowest pressure, even though it is heavy."},
+ {q:"You press a drawing pin with 20 N. Where is the pressure greater?",rule:"max",mat:"snow",soft:1e9,kind:"box",label:"PIN",o:[["On your thumb (flat head)",20,0.0001],["On the board (sharp point)",20,0.0000001]],why:"The point's area is tiny, so its pressure is far greater. The flat head keeps your thumb safe."}
+];
+let qpSet=[],qpI=0,qpScore=0,qpDone=false;
+function qpAns(it){const P=it.o.map(([,F,A])=>F/A);if(it.rule==="max")return P.indexOf(Math.max(...P));if(it.rule==="min")return P.indexOf(Math.min(...P));return P.findIndex(p=>p<=it.rule)}
+function qpStart(){const pool=QP.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}qpSet=pool.slice(0,8);qpI=0;qpScore=0;$("qpend").hidden=true;$("qpbody").hidden=false;qpShow()}
+function qpDraw(it,k){const[,F,A]=it.o[k];const w=Math.max(6,Math.min(560,Math.sqrt(A*10000)*5.5));const P=F/A,dent=dentFor(P,it.soft);
+  ground($("qground"),it.mat,dent,w);load($("qload"),w,it.label,it.kind);$("qloadg").style.transform=$("qfront").style.transform=`translateY(${dent}px)`;arrows($("qfront"),w,Math.min(1,Math.log10(P)/7))}
+function qpShow(){const it=qpSet[qpI];qpDone=false;$("qpnum").textContent="Question "+(qpI+1)+" of "+qpSet.length;$("qpscore").textContent="Score "+qpScore;
+  $("qpbar").style.width=(qpI/qpSet.length*100)+"%";$("qpq").textContent=it.q;$("qpfb").hidden=true;$("qpnext").hidden=true;qpDraw(it,0);
+  const box=$("qpopts");box.innerHTML="";it.o.forEach(([n],k)=>{const b=document.createElement("button");b.className="opt";b.innerHTML="<span></span><span></span>";b.firstChild.textContent=n;
+    b.onmouseenter=()=>{if(!qpDone)qpDraw(it,k)};b.onfocus=b.onmouseenter;b.onclick=()=>qpPick(k);box.appendChild(b)})}
+function qpPick(k){if(qpDone)return;qpDone=true;const it=qpSet[qpI],a=qpAns(it),ok=k===a;if(ok)qpScore++;qpDraw(it,a);
+  [...$("qpopts").children].forEach((c,j)=>{c.disabled=true;c.lastChild.textContent=fmt(it.o[j][1]/it.o[j][2])+" Pa";if(j===a)c.classList.add("right");else if(j===k)c.classList.add("wrong")});
+  const fb=$("qpfb");fb.hidden=false;fb.className="fb "+(ok?"ok":"no");fb.innerHTML="<b></b><div></div>";fb.firstChild.textContent=ok?"Correct!":"Not quite!";fb.lastChild.textContent=it.why;
+  $("qpscore").textContent="Score "+qpScore;$("qpbar").style.width=((qpI+1)/qpSet.length*100)+"%";const n=$("qpnext");n.hidden=false;n.textContent=qpI<qpSet.length-1?"Next":"See score";n.focus()}
+$("qpnext").onclick=()=>{qpI++;if(qpI<qpSet.length)qpShow();else{$("qpbody").hidden=true;$("qpend").hidden=false;$("qpres").textContent=qpScore+" / "+qpSet.length;
+  $("qpmsg").textContent=qpScore===qpSet.length?"Perfect! You're a pressure pro.":qpScore>=6?"Great job!":"Good try. Remember: small area = big pressure."}};
+$("qpagain").onclick=qpStart;
+
+
+/* ---------- EXPEDITION (adventure map, hearts, combo, shop, badges) ---------- */
+const RR=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),PK=a=>a[Math.floor(Math.random()*a.length)];
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const nice=x=>{const p=Math.pow(10,Math.floor(Math.log10(x))-1);return Math.round(x/p)*p};
+// pick challenge: need = "below" (only one option stays under the limit) or "above" (only one beats the limit)
+function pickC(o){const P=o.opts.map(([,A])=>o.F/A),s=P.slice().sort((a,b)=>a-b);let T,ans;
+  if(o.need==="below"){T=nice(Math.sqrt(s[0]*s[1]));ans=P.indexOf(s[0])}else{T=nice(Math.sqrt(s[s.length-1]*s[s.length-2]));ans=P.indexOf(s[s.length-1])}
+  const order=sh(o.opts.map((x,i)=>i));return {type:"pick",title:o.title,story:o.story.replace("{T}",fmt(T)),opts:order.map(i=>o.opts[i]),ans:order.indexOf(ans),F:o.F,T,need:o.need,
+    scene:{mat:o.mat,soft:o.need==="below"?T:T*5,label:o.label,kind:o.kind},hint:o.hint,
+    sol:order.map(i=>o.opts[i][0]+": "+fmt(o.F)+" ÷ "+fmt(o.opts[i][1])+" = "+fmt(P[i])+" Pa").join(" · ")+(o.need==="below"?" → only one is below "+fmt(T)+" Pa.":" → only one is above "+fmt(T)+" Pa.")}}
+function numC(title,story,ans,unit,hint,sol,scene){return {type:"num",title,story,ans,unit,hint,sol,scene}}
+const G={
+  calcP:mat=>{const A=PK([0.02,0.04,0.05,0.1,0.2,0.25,0.4,0.5]);let F;do{F=RR(2,90)*10}while(!Number.isInteger(F/A));return numC("Measure the pressure","A "+F+" N crate rests on a base of "+A+" m². What pressure does it exert?",F/A,"Pa","P = F ÷ A","P = "+F+" ÷ "+A+" = "+fmt(F/A)+" Pa",{mat,F,A,label:F+" N"})},
+  calcF:mat=>{const P=PK([500,800,1000,1500,2000,2500,4000]),A=PK([0.1,0.2,0.3,0.4,0.5]);return numC("Weigh the cargo","A cargo box exerts "+fmt(P)+" Pa on an area of "+A+" m². What is its weight?",P*A,"N","F = P × A","F = "+fmt(P)+" × "+A+" = "+fmt(P*A)+" N",{mat,F:P*A,A,label:"? N"})},
+  calcA:mat=>{const F=PK([1000,2000,3000,5000,8000]),P=PK([2000,4000,5000,10000]);return numC("Plan the platform","A "+fmt(F)+" N load must not exert more than "+fmt(P)+" Pa. What is the smallest area it needs, in m²?",F/P,"m²","A = F ÷ P","A = "+fmt(F)+" ÷ "+fmt(P)+" = "+fmt(F/P)+" m²",{mat,F,A:F/P,label:fmt(F)+" N"})},
+  conv:mat=>{const A=PK([10,20,25,40,50]);let F;do{F=RR(1,40)*5}while(!Number.isInteger(F*10000/A));return numC("Convert, then calculate","A "+F+" N force acts on "+A+" cm². What is the pressure in Pa (N/m²)?",F*10000/A,"Pa","First change cm² to m²: divide by 10 000.",A+" cm² = "+fmt(A/10000)+" m². P = "+F+" ÷ "+fmt(A/10000)+" = "+fmt(F*10000/A)+" Pa",{mat,F,A:A/10000,label:F+" N"})},
+  ncm:mat=>{const p=PK([2,3,4,5,8,12]);return numC("Unit puzzle","A tyre exerts "+p+" N/cm². How many pascals (N/m²) is that?",p*10000,"Pa","1 m² = 10 000 cm², so 1 N/cm² = 10 000 N/m².",p+" N/cm² × 10 000 = "+fmt(p*10000)+" Pa",{mat,F:p*10000*0.05,A:0.05,label:"TYRE"})},
+};
+const ZONES=[
+ {name:"Sandy Beach",mat:"sand",sky:"#fdf3d8",land:"#efd9a1",stops:[
+   ()=>pickC({title:"Cross the dunes",story:"Soft sand swallows anything above {T} Pa. Pick footwear so the explorer stays on top.",need:"below",F:RR(45,80)*10,mat:"sand",kind:"person",opts:[["High heels",0.004],["Sneakers",0.03],["Wide sand shoes",0.12]],hint:"Work out F ÷ A for each. You need the one BELOW the limit."}),
+   ()=>G.calcP("sand"),
+   ()=>pickC({title:"Plant the flag",story:"Push the flag pole into packed sand. It only goes in above {T} Pa. Which end do you push in?",need:"above",F:RR(8,20)*5,mat:"sand",kind:"box",label:"FLAG",opts:[["Pointed tip",0.0002],["Flat end",0.002],["Round base plate",0.05]],hint:"You need a BIG pressure. Smallest area wins."}),
+   ()=>G.calcF("sand")]},
+ {name:"Muddy Swamp",mat:"mud",sky:"#e9f1df",land:"#b99a78",stops:[
+   ()=>pickC({title:"Drive the supply truck",story:"The swamp road sinks above {T} Pa. Which wheels get the truck through?",need:"below",F:RR(20,60)*1000,mat:"mud",kind:"box",label:"TRUCK",opts:[["Narrow tyres",0.5],["Wide tyres",1.5],["Caterpillar tracks",4]],hint:"Bigger area means smaller pressure."}),
+   ()=>G.conv("mud"),
+   ()=>{const W=PK([20,30,40,60]);return pickC({title:"Leave a deep print",story:"To mark the trail you need a print deeper than {T} Pa. Which face of the "+W+" N brick do you press down?",need:"above",F:W,mat:"mud",kind:"box",label:"BRICK",opts:[["20 × 10 cm face",0.02],["20 × 5 cm face",0.01],["10 × 5 cm face",0.005]],hint:"Same force, smallest face gives the greatest pressure."})},
+   ()=>G.calcA("mud")]},
+ {name:"Frozen Lake",mat:"snow",sky:"#e6f1fb",land:"#f4f8fc",stops:[
+   ()=>pickC({title:"Thin ice!",story:"The ice cracks above {T} Pa. How should the explorer cross?",need:"below",F:RR(50,80)*10,mat:"snow",kind:"person",opts:[["Stand on one foot",0.02],["Walk normally",0.04],["Lie flat and crawl",0.6]],hint:"Spread the weight over the biggest area."}),
+   ()=>pickC({title:"Ice fishing",story:"Make a hole in the ice. It only breaks above {T} Pa. Which tool do you push with 200 N?",need:"above",F:200,mat:"snow",kind:"box",label:"TOOL",opts:[["Ice pick (sharp point)",0.00005],["Shovel edge",0.002],["Snow boot",0.03]],hint:"Breaking needs a large pressure: smallest area."}),
+   ()=>G.ncm("snow"),
+   ()=>pickC({title:"Who can follow?",story:"Snow holds up to {T} Pa. Which team member can walk across without sinking?",need:"below",F:600,mat:"snow",kind:"person",opts:[["Explorer in boots",0.05],["Explorer on snowshoes",0.25],["Explorer in sneakers",0.03]],hint:"Find the smallest pressure."})]}
+];
+const BOSS=["Sand Crab King","Swamp Monster","Ice Giant"];
+const BADGES=[["first","First steps","Clear your first stop"],["combo5","On fire","Get a 5× combo"],["flawless","Flawless","Clear a zone without losing a heart"],["z0","Beach champion","Beat the Sand Crab King"],["z1","Swamp champion","Beat the Swamp Monster"],["z2","Ice champion","Beat the Ice Giant"],["rich","Treasure hunter","Hold 300 coins"],["shop","Shopper","Buy something in the shop"]];
+const OUTFITS=[["purple","Purple explorer",0,"#6b56a8"],["aqua","Aqua explorer",40,"#1f8f8f"],["gold","Golden explorer",80,"#e3a614"],["red","Red explorer",80,"#e2455a"]];
+let X={zone:0,stop:0,hearts:3,maxH:3,coins:0,combo:0,hints:1,outfit:"purple",owned:["purple"],badges:[],unlocked:1,lost:false,best:{}};
+try{const sv=JSON.parse(store.get("pl-exp")||"null");if(sv)X=Object.assign(X,sv)}catch(e){}
+const saveX=()=>store.set("pl-exp",JSON.stringify(X));
+let C=null,bossN=0,xSolved=false,xPicked=-1,xTries=0,timerId=null,tLeft=0;
+function badge(id){if(X.badges.includes(id))return;X.badges.push(id);saveX();const b=BADGES.find(x=>x[0]===id);toast("Badge earned: "+b[1]+"!")}
+function toast(msg){const fb=$("xfb");const d=document.createElement("div");d.style.cssText="font-weight:700;color:var(--purple)";d.textContent="★ "+msg;fb.appendChild(d)}
+function paintHUD(){$("xhearts").innerHTML="";for(let i=0;i<X.maxH;i++){const s=document.createElement("span");s.textContent="♥";if(i>=X.hearts)s.className="off";$("xhearts").appendChild(s)}
+  $("xcoins").textContent=X.coins;$("xcombo").textContent=X.combo>1?"Combo ×"+Math.min(X.combo,5):"";$("xhints").textContent=X.hints;
+  const z=$("xzones");z.innerHTML="";ZONES.forEach((Z,i)=>{const b=document.createElement("button");b.className="zone";b.textContent=(i+1)+". "+Z.name+(X.best[i]?" ✓":"");b.disabled=i>=X.unlocked;b.setAttribute("aria-pressed",i===X.zone);b.onclick=()=>{if(i!==X.zone){stopTimer();X.zone=i;X.stop=0;X.hearts=X.maxH;X.lost=false;X.combo=0;saveX();newStop()}};z.appendChild(b)})}
+const NODE=[[70,150],[190,92],[320,140],[450,86],[570,128]];
+function drawMap(){const Z=ZONES[X.zone],m=$("xmap");m.innerHTML="";
+  mk("rect",{width:640,height:210,fill:Z.sky},m);mk("path",{d:"M0 120 C120 100 220 160 330 130 C450 98 540 150 640 120 L640 210 L0 210Z",fill:Z.land},m);
+  mk("polyline",{points:NODE.map(p=>p.join(",")).join(" "),fill:"none",stroke:"var(--muted)","stroke-width":4,"stroke-dasharray":"2 10","stroke-linecap":"round"},m);
+  NODE.forEach(([x,y],i)=>{const boss=i===4,done=i<X.stop;const g=mk("g",{},m);
+    mk("circle",{cx:x,cy:y,r:boss?24:18,fill:done?"var(--teal)":i===X.stop?"#fff":"var(--paper)",stroke:boss?"#e2455a":"var(--purple)","stroke-width":4},g);
+    const t=mk("text",{x,y:y+6,"text-anchor":"middle","font-size":boss?13:16,"font-weight":700,fill:done?"#fff":"var(--fg)","font-family":"var(--f-body)"},g);t.textContent=done?"✓":boss?"BOSS":String(i+1)});
+  mk("text",{x:16,y:28,"font-size":18,"font-weight":700,fill:"#3d3654","font-family":"var(--f-display)"},m).textContent="Zone "+(X.zone+1)+": "+Z.name;
+  const col=OUTFITS.find(o=>o[0]===X.outfit)[3];const e=mk("g",{id:"xexplorer"},m);
+  mk("circle",{cx:0,cy:-44,r:9,fill:col},e);mk("rect",{x:-10,y:-35,width:20,height:24,rx:7,fill:col},e);mk("rect",{x:-14,y:-48,width:28,height:5,rx:2,fill:"#3d3654"},e);mk("rect",{x:-8,y:-56,width:16,height:9,rx:3,fill:"#3d3654"},e);
+  const [x,y]=NODE[Math.min(X.stop,4)];e.style.transform=`translate(${x}px,${y-16}px)`}
+function moveExplorer(){const [x,y]=NODE[Math.min(X.stop,4)];const e=$("xexplorer");if(e)e.style.transform=`translate(${x}px,${y-16}px)`}
+function xScene(F,A,mat,soft,label,kind){const w=Math.max(6,Math.min(560,Math.sqrt(A*10000)*5.5)),P=F/A,dent=dentFor(P,soft);
+  ground($("xground"),mat,dent,w);load($("xload"),w,label,kind);$("xloadg").style.transform=$("xfront").style.transform=`translateY(${dent}px)`;arrows($("xfront"),w,Math.min(1,Math.log10(P)/7))}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}$("xtimer").hidden=true}
+function newStop(){stopTimer();xSolved=false;xPicked=-1;xTries=0;const Z=ZONES[X.zone];
+  if(X.stop>=4){bossN=bossN||0;const gens=[G.calcP,G.calcF,G.calcA,G.conv,G.ncm];C=PK(gens)(Z.mat);C.title=BOSS[X.zone]+": round "+(bossN+1)+" of 3";C.boss=true}
+  else{C=Z.stops[X.stop]();bossN=0}
+  $("xtitle").textContent=C.title;$("xstory").textContent=C.story;const tg=$("xtag");tg.textContent=C.boss?"Boss battle":"Stop "+(X.stop+1);tg.className="xtag"+(C.boss?" boss":"");
+  $("xfb").hidden=true;$("xnext").hidden=true;$("xcheck").hidden=false;$("xhint").hidden=false;$("xhinttxt").hidden=true;$("xhinttxt").textContent="Hint: "+C.hint;
+  const box=$("xinput");box.innerHTML="";
+  if(C.type==="num"){const s=C.scene;xScene(s.F,s.A,s.mat,s.F/s.A*1.6,s.label,"box");
+    box.innerHTML='<div class="ans"><label for="xnum" style="font-weight:700">Answer</label><input id="xnum" inputmode="decimal" autocomplete="off"><span style="font-family:var(--f-mono)">'+C.unit+'</span></div>';$("xnum").addEventListener("keydown",e=>{if(e.key==="Enter")xCheck()})}
+  else{const s=C.scene;xScene(C.F,C.opts[0][1],s.mat,s.soft,s.label,s.kind);const d=document.createElement("div");d.className="opts";
+    C.opts.forEach(([n,A],k)=>{const b=document.createElement("button");b.className="opt";b.innerHTML="<span></span><span>preview</span>";b.firstChild.textContent=n;
+      b.onclick=()=>{if(xSolved)return;xPicked=k;[...d.children].forEach(c=>c.setAttribute("aria-pressed",c===b));xScene(C.F,A,s.mat,s.soft,s.label,s.kind)};d.appendChild(b)});box.appendChild(d)}
+  if(C.boss){tLeft=40;$("xtimer").hidden=false;const tick=()=>{$("xtfill").style.width=(tLeft/40*100)+"%";$("xtsec").textContent=tLeft+"s";if(tLeft<=0){stopTimer();loseHeart("Time's up!");return}tLeft--};tick();timerId=setInterval(tick,1000)}
+  paintHUD();drawMap()}
+function loseHeart(msg){X.hearts--;X.combo=0;X.lost=true;const h=$("xhearts");h.classList.remove("hit");void h.offsetWidth;h.classList.add("hit");saveX();
+  const fb=$("xfb");fb.hidden=false;fb.className="fb no";fb.innerHTML="<b></b>";fb.firstChild.textContent=msg+" You lost a heart.";
+  if(xTries>=2&&C.sol){const s=document.createElement("div");s.className="sol";s.textContent="How to solve it: "+C.sol;fb.appendChild(s)}
+  if(X.hearts<=0){stopTimer();$("xcheck").hidden=true;$("xhint").hidden=true;const n=$("xnext");n.hidden=false;n.textContent="Out of hearts! Restart zone";n.onclick=()=>{X.stop=0;X.hearts=X.maxH;X.lost=false;bossN=0;saveX();n.onclick=xContinue;newStop()}}
+  else if(C.boss&&!timerId){tLeft=40;$("xtimer").hidden=false;timerId=setInterval(()=>{$("xtfill").style.width=(tLeft/40*100)+"%";$("xtsec").textContent=tLeft+"s";if(tLeft<=0){stopTimer();loseHeart("Time's up!");return}tLeft--},1000)}
+  paintHUD()}
+function xCheck(){if(xSolved||X.hearts<=0)return;let ok;
+  if(C.type==="num"){const v=parseFloat(($("xnum").value||"").replace(/[, ]/g,""));if(isNaN(v)){$("xnum").focus();return}ok=Math.abs(v-C.ans)<=Math.abs(C.ans)*0.01+1e-9}
+  else{if(xPicked<0){const fb=$("xfb");fb.hidden=false;fb.className="fb no";fb.innerHTML="<b>Pick an option first.</b>";return}ok=xPicked===C.ans}
+  xTries++;
+  if(!ok){if(C.type==="pick"){const c=$("xinput").querySelector(".opts").children[xPicked];c.lastChild.textContent=fmt(C.F/C.opts[xPicked][1])+" Pa";c.classList.add("wrong");
+      if(C.need==="below")xScene(C.F,C.opts[xPicked][1],C.scene.mat,C.scene.soft,C.scene.label,C.scene.kind)}
+    loseHeart(C.type==="pick"?(C.need==="below"?"Splosh! It sank.":"Not enough pressure!"):"Not quite.");return}
+  xSolved=true;stopTimer();X.combo++;const mult=Math.min(X.combo,5),gain=(C.boss?20:10)*mult;X.coins+=gain;const cb=$("xcoins").parentElement;cb.classList.remove("bump");void cb.offsetWidth;cb.classList.add("bump");
+  const fb=$("xfb");fb.hidden=false;fb.className="fb ok";fb.innerHTML="<b></b><div class='sol'></div>";fb.firstChild.textContent="Correct! +"+gain+" coins"+(mult>1?" (combo ×"+mult+")":"");fb.lastChild.textContent=C.sol;
+  if(C.type==="pick"){[...$("xinput").querySelector(".opts").children].forEach((c,k)=>{c.lastChild.textContent=fmt(C.F/C.opts[k][1])+" Pa";if(k===C.ans)c.classList.add("right")});xScene(C.F,C.opts[C.ans][1],C.scene.mat,C.scene.soft,C.scene.label,C.scene.kind)}
+  badge("first");if(X.combo>=5)badge("combo5");if(X.coins>=300)badge("rich");
+  $("xcheck").hidden=true;$("xhint").hidden=true;const n=$("xnext");n.hidden=false;n.onclick=xContinue;
+  if(C.boss&&bossN<2){n.textContent="Next boss round";}else if(C.boss){n.textContent="Claim victory!"}else n.textContent="Continue";
+  paintHUD();saveX()}
+function xContinue(){if(C.boss){if(bossN<2){bossN++;newStop();return}
+    // zone clear
+    X.best[X.zone]=1;badge("z"+X.zone);if(!X.lost)badge("flawless");X.coins+=50;if(X.unlocked<3&&X.unlocked===X.zone+1)X.unlocked++;bossN=0;
+    openModal("Zone cleared!","<p style='margin:0'>You beat the "+BOSS[X.zone]+"! +50 bonus coins."+(X.zone<2?" The next zone is now unlocked.":" You are a Pressure Pro!")+"</p>");
+    if(X.zone<2){X.zone++;}X.stop=0;X.hearts=X.maxH;X.lost=false;saveX();newStop();return}
+  X.stop++;saveX();moveExplorer();setTimeout(newStop,650)}
+$("xcheck").onclick=xCheck;
+$("xhint").onclick=()=>{if(X.hints<=0){$("xhinttxt").hidden=false;$("xhinttxt").textContent="No hint scrolls left. Buy more in the Shop.";return}X.hints--;saveX();paintHUD();$("xhinttxt").hidden=false;$("xhinttxt").textContent="Hint: "+C.hint;$("xhint").hidden=true};
+function openModal(t,html){$("xmt").textContent=t;$("xmb").innerHTML=html;$("xmodal").hidden=false;$("xmclose").focus()}
+$("xmclose").onclick=()=>{$("xmodal").hidden=true};
+function shop(){const items=[["hint","Hint scroll","Shows a hint for one challenge",15],["heart","Extra heart","+1 max heart (up to 5)",60]].concat(OUTFITS.slice(1).map(o=>["o-"+o[0],o[1],"A new look on the map",o[2]]));
+  let h="<p style='margin:0'>You have <b>"+X.coins+"</b> coins.</p>";items.forEach(([id,n,d,c])=>{const own=id.startsWith("o-")&&X.owned.includes(id.slice(2));const wear=id.startsWith("o-")&&X.outfit===id.slice(2);
+    h+="<div class='shopitem'><div><b>"+n+"</b><small>"+d+"</small></div><button class='"+(own?"ghost":"go")+" sm' data-buy='"+id+"'>"+(wear?"Wearing":own?"Wear":c+" coins")+"</button></div>"});
+  h+="<div class='shopitem'><div><b>Purple explorer</b><small>The classic look</small></div><button class='ghost sm' data-buy='o-purple'>"+(X.outfit==="purple"?"Wearing":"Wear")+"</button></div>";
+  openModal("Shop",h);$("xmb").querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{const id=b.dataset.buy;
+    if(id.startsWith("o-")){const o=id.slice(2);if(X.owned.includes(o)){X.outfit=o}else{const c=OUTFITS.find(x=>x[0]===o)[2];if(X.coins<c)return;X.coins-=c;X.owned.push(o);X.outfit=o;badge("shop")}}
+    else if(id==="hint"){if(X.coins<15)return;X.coins-=15;X.hints++;badge("shop")}
+    else if(id==="heart"){if(X.coins<60||X.maxH>=5)return;X.coins-=60;X.maxH++;X.hearts++;badge("shop")}
+    saveX();paintHUD();drawMap();shop()})}
+$("xshopbtn").onclick=shop;
+$("xbadgebtn").onclick=()=>openModal("Badges ("+X.badges.length+"/"+BADGES.length+")",BADGES.map(([id,n,d])=>"<div class='badge"+(X.badges.includes(id)?" got":"")+"'><span class='bi'>"+(X.badges.includes(id)?"★":"?")+"</span><div><b>"+n+"</b><small>"+d+"</small></div></div>").join(""));
+$("xhowbtn").onclick=()=>openModal("How to play","<ul style='margin:0;padding-left:20px;display:grid;gap:6px'><li>Guide the explorer across 3 zones: Sandy Beach, Muddy Swamp and Frozen Lake.</li><li>Each stop is a pressure challenge. Use <b>P = F ÷ A</b>.</li><li>Wrong answer: you lose a <b>heart</b> ♥. Lose them all and the zone restarts (you keep your coins).</li><li>Right answers in a row build a <b>combo</b>: up to ×5 coins.</li><li>Beat the <b>boss</b> (3 timed rounds) to unlock the next zone.</li><li>Spend coins in the <b>Shop</b> on hint scrolls, extra hearts and new outfits. Collect all 8 <b>badges</b>!</li></ul>");
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("xmodal").hidden=true});
+newStop();
+window.__pl={get C(){return C},get X(){return X}};
+
+/* ---------- tabs ---------- */
+function tab(which){stopTimer();["exp","lab","mis","qp"].forEach(w=>{$("t-"+w).setAttribute("aria-selected",which===w);$(w).hidden=which!==w});if(which==="exp"&&C&&C.boss&&!xSolved&&X.hearts>0)newStop();if(which==="qp"&&!qpSet.length)qpStart()}
+$("t-exp").onclick=()=>tab("exp");$("t-lab").onclick=()=>tab("lab");$("t-mis").onclick=()=>tab("mis");$("t-qp").onclick=()=>tab("qp");
+presets.children[1].click();paintStars();openM(0);
+if(location.hash==="#lab")tab("lab");if(location.hash==="#missions")tab("mis");if(location.hash==="#quick-pick")tab("qp");
+})();
+</script>
+
+</body></html>
